@@ -362,6 +362,11 @@ export async function importUSGAData(action: "import" | "refresh"): Promise<Impo
     }
   }
 
+  // Ensure the full 63-matchup bracket structure always exists.
+  // Future rounds (R16–F) have null golfers until results come in;
+  // we create the shells so picks can be made against them.
+  await ensureFullBracketStructure(tournament.id);
+
   await markEliminatedGolfers(tournament.id);
 
   await db
@@ -470,6 +475,57 @@ const USAM_2026_GOLFERS: RawGolfer[] = [
   { seed: 63, externalId: "12936343191568833661", fullName: "Parker Sands",           firstName: "Parker",  lastName: "Sands",           country: "United States of America" },
   { seed: 64, externalId: "12936343191568830717", fullName: "Taishi Moto",            firstName: "Taishi",  lastName: "Moto",            country: "Japan" },
 ];
+
+/**
+ * Ensure the full 63-matchup bracket shell exists in the DB.
+ * R16–Final start with null golfers; they fill in as results come in.
+ * This is idempotent — safe to call on every import cycle.
+ */
+async function ensureFullBracketStructure(tournamentId: string): Promise<void> {
+  type Shell = { id: string; round: string; roundNumber: number; position: number; nextMatchupId: string | null; nextSlot: number | null };
+
+  const shells: Shell[] = [
+    // R16 (8)
+    { id: `${tournamentId}-r16-01`, round: "R16", roundNumber: 3, position: 1, nextMatchupId: `${tournamentId}-qf-01`, nextSlot: 1 },
+    { id: `${tournamentId}-r16-02`, round: "R16", roundNumber: 3, position: 2, nextMatchupId: `${tournamentId}-qf-01`, nextSlot: 2 },
+    { id: `${tournamentId}-r16-03`, round: "R16", roundNumber: 3, position: 3, nextMatchupId: `${tournamentId}-qf-02`, nextSlot: 1 },
+    { id: `${tournamentId}-r16-04`, round: "R16", roundNumber: 3, position: 4, nextMatchupId: `${tournamentId}-qf-02`, nextSlot: 2 },
+    { id: `${tournamentId}-r16-05`, round: "R16", roundNumber: 3, position: 5, nextMatchupId: `${tournamentId}-qf-03`, nextSlot: 1 },
+    { id: `${tournamentId}-r16-06`, round: "R16", roundNumber: 3, position: 6, nextMatchupId: `${tournamentId}-qf-03`, nextSlot: 2 },
+    { id: `${tournamentId}-r16-07`, round: "R16", roundNumber: 3, position: 7, nextMatchupId: `${tournamentId}-qf-04`, nextSlot: 1 },
+    { id: `${tournamentId}-r16-08`, round: "R16", roundNumber: 3, position: 8, nextMatchupId: `${tournamentId}-qf-04`, nextSlot: 2 },
+    // QF (4)
+    { id: `${tournamentId}-qf-01`, round: "QF", roundNumber: 4, position: 1, nextMatchupId: `${tournamentId}-sf-01`, nextSlot: 1 },
+    { id: `${tournamentId}-qf-02`, round: "QF", roundNumber: 4, position: 2, nextMatchupId: `${tournamentId}-sf-01`, nextSlot: 2 },
+    { id: `${tournamentId}-qf-03`, round: "QF", roundNumber: 4, position: 3, nextMatchupId: `${tournamentId}-sf-02`, nextSlot: 1 },
+    { id: `${tournamentId}-qf-04`, round: "QF", roundNumber: 4, position: 4, nextMatchupId: `${tournamentId}-sf-02`, nextSlot: 2 },
+    // SF (2)
+    { id: `${tournamentId}-sf-01`, round: "SF", roundNumber: 5, position: 1, nextMatchupId: `${tournamentId}-f-01`, nextSlot: 1 },
+    { id: `${tournamentId}-sf-02`, round: "SF", roundNumber: 5, position: 2, nextMatchupId: `${tournamentId}-f-01`, nextSlot: 2 },
+    // F (1)
+    { id: `${tournamentId}-f-01`, round: "F", roundNumber: 6, position: 1, nextMatchupId: null, nextSlot: null },
+  ];
+
+  for (const s of shells) {
+    const existing = await db.select().from(matchupsTable).where(eq(matchupsTable.id, s.id));
+    if (existing.length === 0) {
+      await db.insert(matchupsTable).values({
+        id: s.id,
+        tournamentId,
+        round: s.round,
+        roundNumber: s.roundNumber,
+        position: s.position,
+        golfer1Id: null,
+        golfer2Id: null,
+        winnerId: null,
+        nextMatchupId: s.nextMatchupId,
+        nextSlot: s.nextSlot,
+        status: "scheduled",
+        sourceUpdatedAt: new Date(),
+      } as InsertMatchup);
+    }
+  }
+}
 
 /**
  * Standard 64-player match play seeding bracket.

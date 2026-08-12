@@ -118,6 +118,72 @@ export default function BracketViewer() {
     return grouped;
   }, [matchups]);
 
+  /**
+   * ESPN Tournament Challenge–style pick propagation.
+   *
+   * Processes rounds bottom-up (R64 → R32 → … → F).
+   * For each matchup whose real golfers are TBD, we look at which earlier
+   * matchup feeds into that slot and use whichever golfer the user picked
+   * as the projected participant. The projected winner of each matchup is
+   * either the real tournament winner (if the match is done) or whoever
+   * the user chose among the projected field.
+   */
+  const { projectedGolfer1Map, projectedGolfer2Map } = useMemo(() => {
+    if (!matchups) return { projectedGolfer1Map: new Map(), projectedGolfer2Map: new Map() };
+
+    // Reverse-lookup: feedingFor[targetMatchupId][slot] = sourceMatchupId
+    const feedingFor: Record<string, { 1?: string; 2?: string }> = {};
+    matchups.forEach((m) => {
+      if (m.nextMatchupId && m.nextSlot) {
+        if (!feedingFor[m.nextMatchupId]) feedingFor[m.nextMatchupId] = {};
+        (feedingFor[m.nextMatchupId] as Record<number, string>)[m.nextSlot] = m.id;
+      }
+    });
+
+    const matchupById = new Map(matchups.map((m) => [m.id, m]));
+    const pickByMatchupId = new Map(picks.map((p) => [p.matchupId, p.selectedGolferId]));
+
+    // projected winner per matchup (null = not yet determined)
+    const projectedWinner = new Map<string, typeof matchups[0]["golfer1"]>();
+    const g1Map = new Map<string, typeof matchups[0]["golfer1"]>();
+    const g2Map = new Map<string, typeof matchups[0]["golfer1"]>();
+
+    ROUND_ORDER.forEach((round) => {
+      (matchupsByRound[round] ?? []).forEach((matchup) => {
+        // Slot 1 — real golfer wins over projected
+        let pg1 = matchup.golfer1 ?? null;
+        if (!pg1) {
+          const srcId = feedingFor[matchup.id]?.[1];
+          if (srcId) pg1 = projectedWinner.get(srcId) ?? null;
+        }
+
+        // Slot 2
+        let pg2 = matchup.golfer2 ?? null;
+        if (!pg2) {
+          const srcId = feedingFor[matchup.id]?.[2];
+          if (srcId) pg2 = projectedWinner.get(srcId) ?? null;
+        }
+
+        g1Map.set(matchup.id, pg1);
+        g2Map.set(matchup.id, pg2);
+
+        // Determine projected winner for this matchup
+        // Real tournament result takes priority over user pick
+        if (matchup.winner) {
+          projectedWinner.set(matchup.id, matchup.winner);
+        } else {
+          const pickedId = pickByMatchupId.get(matchup.id);
+          if (pickedId) {
+            const winner = [pg1, pg2].find((g) => g?.id === pickedId) ?? null;
+            projectedWinner.set(matchup.id, winner);
+          }
+        }
+      });
+    });
+
+    return { projectedGolfer1Map: g1Map, projectedGolfer2Map: g2Map };
+  }, [matchups, picks, matchupsByRound]);
+
   // Pick counts per round — for the bottom nav badge
   const pickCountByRound = useMemo(() => {
     const counts = {} as Record<MatchupRound, { done: number; total: number }>;
@@ -162,8 +228,11 @@ export default function BracketViewer() {
   const finalPick = picks.find((p) => p.round === MatchupRound.F);
   let championGolfer = undefined;
   if (finalPick?.selectedGolferId && finalMatchup) {
-    if (finalMatchup.golfer1?.id === finalPick.selectedGolferId) championGolfer = finalMatchup.golfer1;
-    else if (finalMatchup.golfer2?.id === finalPick.selectedGolferId) championGolfer = finalMatchup.golfer2;
+    // Check real golfers first, then projected
+    const pg1 = finalMatchup.golfer1 ?? projectedGolfer1Map.get(finalMatchup.id) ?? null;
+    const pg2 = finalMatchup.golfer2 ?? projectedGolfer2Map.get(finalMatchup.id) ?? null;
+    if (pg1?.id === finalPick.selectedGolferId) championGolfer = pg1;
+    else if (pg2?.id === finalPick.selectedGolferId) championGolfer = pg2;
   }
 
   const currentRoundMatchups = matchupsByRound[activeTab] ?? [];
@@ -172,8 +241,6 @@ export default function BracketViewer() {
     ? pickCountByRound[previousRound]
     : null;
   const roundIsEmpty = currentRoundMatchups.length === 0;
-  const needsPrevRoundFirst =
-    roundIsEmpty && prevRoundPicks && prevRoundPicks.total > 0 && prevRoundPicks.done < prevRoundPicks.total;
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-gray-50">
@@ -264,32 +331,25 @@ export default function BracketViewer() {
               </div>
             )}
 
-            {/* Empty state when round not available yet */}
-            {roundIsEmpty ? (
-              <div className="text-center py-16 px-6 border border-dashed border-border rounded bg-white">
-                <div className="text-3xl mb-4">⛳</div>
-                <p className="font-semibold text-sm mb-1 text-foreground">
-                  {ROUND_DISPLAY_NAMES[activeTab]} not available yet
+            {/* Hint banner when projected golfers aren't available yet for this round */}
+            {!roundIsEmpty && previousRound && prevRoundPicks && prevRoundPicks.done < prevRoundPicks.total && (
+              <div className="mb-4 px-3 py-2.5 bg-amber-50 border border-amber-200 flex items-center justify-between gap-3 max-w-sm mx-auto">
+                <p className="text-xs text-amber-800">
+                  Pick your <strong>{ROUND_DISPLAY_NAMES[previousRound]}</strong> winners to see who advances here.
                 </p>
-                {needsPrevRoundFirst && previousRound ? (
-                  <>
-                    <p className="text-xs text-muted-foreground mb-5">
-                      Finish your {ROUND_DISPLAY_NAMES[previousRound]} picks first — winners advance to this round automatically.
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-sm text-xs"
-                      onClick={() => setActiveTab(previousRound)}
-                    >
-                      ← Go to {ROUND_DISPLAY_NAMES[previousRound]}
-                    </Button>
-                  </>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Picks for this round will appear once earlier rounds are complete.
-                  </p>
-                )}
+                <button
+                  onClick={() => setActiveTab(previousRound)}
+                  className="text-xs font-semibold text-amber-700 underline underline-offset-2 whitespace-nowrap shrink-0"
+                >
+                  Go back
+                </button>
+              </div>
+            )}
+
+            {roundIsEmpty ? (
+              <div className="text-center py-16 px-6 border border-dashed border-border bg-white max-w-sm mx-auto">
+                <p className="font-semibold text-sm mb-1">No matchups yet</p>
+                <p className="text-xs text-muted-foreground">This round hasn't been drawn yet.</p>
               </div>
             ) : (
               <div className="grid gap-3 max-w-sm mx-auto">
@@ -301,6 +361,8 @@ export default function BracketViewer() {
                     isLocked={isLocked}
                     onPickGolfer={handlePick}
                     isLoading={pendingMatchups[matchup.id]}
+                    projectedGolfer1={projectedGolfer1Map.get(matchup.id)}
+                    projectedGolfer2={projectedGolfer2Map.get(matchup.id)}
                   />
                 ))}
               </div>
@@ -424,6 +486,8 @@ export default function BracketViewer() {
                           isLocked={isLocked}
                           onPickGolfer={handlePick}
                           isLoading={pendingMatchups[matchup.id]}
+                          projectedGolfer1={projectedGolfer1Map.get(matchup.id)}
+                          projectedGolfer2={projectedGolfer2Map.get(matchup.id)}
                         />
                       ))}
                     </div>
@@ -449,6 +513,8 @@ export default function BracketViewer() {
                     isLocked={isLocked}
                     onPickGolfer={handlePick}
                     isLoading={pendingMatchups[finalMatchup.id]}
+                    projectedGolfer1={projectedGolfer1Map.get(finalMatchup.id)}
+                    projectedGolfer2={projectedGolfer2Map.get(finalMatchup.id)}
                   />
                 </div>
               )}
@@ -476,6 +542,8 @@ export default function BracketViewer() {
                           isLocked={isLocked}
                           onPickGolfer={handlePick}
                           isLoading={pendingMatchups[matchup.id]}
+                          projectedGolfer1={projectedGolfer1Map.get(matchup.id)}
+                          projectedGolfer2={projectedGolfer2Map.get(matchup.id)}
                         />
                       ))}
                     </div>

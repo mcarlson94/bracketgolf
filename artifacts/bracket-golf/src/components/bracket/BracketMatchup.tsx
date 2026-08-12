@@ -13,6 +13,9 @@ interface BracketMatchupProps {
   isLocked: boolean;
   onPickGolfer?: (matchupId: string, golferId: string) => void;
   isLoading?: boolean;
+  /** Projected golfers propagated forward from user picks in earlier rounds */
+  projectedGolfer1?: Golfer | null;
+  projectedGolfer2?: Golfer | null;
 }
 
 export function BracketMatchupCard({
@@ -20,10 +23,15 @@ export function BracketMatchupCard({
   pick,
   isLocked,
   onPickGolfer,
-  isLoading
+  isLoading,
+  projectedGolfer1,
+  projectedGolfer2,
 }: BracketMatchupProps) {
-  const g1 = matchup.golfer1;
-  const g2 = matchup.golfer2;
+  // Real golfer takes priority; fall back to projected (from user picks)
+  const g1 = matchup.golfer1 ?? projectedGolfer1 ?? null;
+  const g2 = matchup.golfer2 ?? projectedGolfer2 ?? null;
+  const isProjected1 = !matchup.golfer1 && !!projectedGolfer1;
+  const isProjected2 = !matchup.golfer2 && !!projectedGolfer2;
 
   const handleSelect = (golferId?: string | null) => {
     if (isLocked || !golferId || !onPickGolfer || isLoading) return;
@@ -45,9 +53,11 @@ export function BracketMatchupCard({
 
   const GolferRow = ({
     golfer,
+    isProjected,
     isBottom,
   }: {
-    golfer: typeof g1;
+    golfer: Golfer | null;
+    isProjected?: boolean;
     isBottom?: boolean;
   }) => {
     const selected = pick?.selectedGolferId === golfer?.id;
@@ -58,7 +68,7 @@ export function BracketMatchupCard({
         onClick={() => handleSelect(golfer?.id)}
         className={cn(
           "relative flex items-center justify-between px-3 py-2.5 transition-colors",
-          isBottom ? "" : "border-b border-border",
+          !isBottom && "border-b border-border",
           canPick && "cursor-pointer",
           canPick && !selected && "hover:bg-gray-50",
           selected && "bg-primary/5",
@@ -69,21 +79,29 @@ export function BracketMatchupCard({
           <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />
         )}
 
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          {/* Seed number */}
+        <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+          {/* Seed */}
           <span className="text-[10px] font-mono text-muted-foreground w-5 text-right shrink-0">
             {golfer?.seed ?? "–"}
           </span>
           {/* Name */}
-          <span
-            className={cn(
-              "text-sm truncate",
-              !golfer ? "text-muted-foreground italic font-normal" : "font-semibold",
-              selected && "text-primary",
-            )}
-          >
+          <span className={cn(
+            "text-sm truncate",
+            !golfer
+              ? "text-muted-foreground italic font-normal"
+              : isProjected
+              ? "font-medium text-foreground/70"   // projected: slightly dimmed
+              : "font-semibold",
+            selected && "text-primary font-semibold",
+          )}>
             {golfer?.fullName ?? "TBD"}
           </span>
+          {/* Projected indicator */}
+          {isProjected && !selected && (
+            <span className="shrink-0 text-[9px] text-muted-foreground/60 font-normal italic">
+              projected
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -95,14 +113,12 @@ export function BracketMatchupCard({
   };
 
   return (
-    <div
-      className={cn(
-        "flex flex-col border border-border bg-card shadow-xs overflow-hidden transition-opacity",
-        isLoading && "opacity-50 pointer-events-none"
-      )}
-    >
-      <GolferRow golfer={g1} />
-      <GolferRow golfer={g2} isBottom />
+    <div className={cn(
+      "flex flex-col border border-border bg-card shadow-xs overflow-hidden transition-opacity",
+      isLoading && "opacity-50 pointer-events-none"
+    )}>
+      <GolferRow golfer={g1} isProjected={isProjected1} />
+      <GolferRow golfer={g2} isProjected={isProjected2} isBottom />
     </div>
   );
 }
@@ -116,21 +132,17 @@ export function ChampionshipCard({
 }) {
   return (
     <div className="flex flex-col items-center justify-center p-6 border-2 border-primary bg-white shadow-md max-w-xs mx-auto text-center w-full">
-      {/* Trophy icon */}
       <div className="w-14 h-14 bg-amber-50 border border-amber-200 flex items-center justify-center mb-4">
         <span className="text-3xl leading-none">🏆</span>
       </div>
-
       <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground mb-2">
         U.S. Amateur Champion
       </p>
-
       {golfer ? (
         <p className="font-bold text-xl text-foreground">{golfer.fullName}</p>
       ) : (
         <p className="text-base text-muted-foreground italic">Make final pick</p>
       )}
-
       {isLocked && golfer && (
         <div className="mt-3 text-[10px] font-bold px-2.5 py-1 bg-secondary text-secondary-foreground rounded-sm tracking-widest uppercase">
           Locked
