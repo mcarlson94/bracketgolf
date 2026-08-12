@@ -1,12 +1,11 @@
-import { 
-  Matchup, 
-  Golfer, 
-  BracketPick, 
-  TournamentStatus,
+import {
+  Matchup,
+  Golfer,
+  BracketPick,
   BracketPickStatus
 } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
-import { Trophy, Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 interface BracketMatchupProps {
   matchup: Matchup;
@@ -16,12 +15,12 @@ interface BracketMatchupProps {
   isLoading?: boolean;
 }
 
-export function BracketMatchupCard({ 
-  matchup, 
-  pick, 
-  isLocked, 
+export function BracketMatchupCard({
+  matchup,
+  pick,
+  isLocked,
   onPickGolfer,
-  isLoading 
+  isLoading
 }: BracketMatchupProps) {
   const g1 = matchup.golfer1;
   const g2 = matchup.golfer2;
@@ -31,135 +30,110 @@ export function BracketMatchupCard({
     onPickGolfer(matchup.id, golferId);
   };
 
-  // Status visual indicator after lock
   const renderStatusIcon = (golferId?: string | null) => {
     if (!isLocked || !pick || !golferId) return null;
-    
-    // In read-only / results mode (handled differently by page, but here we show pick status)
     if (pick.selectedGolferId === golferId) {
-      if (pick.status === BracketPickStatus.correct) {
-        return <div className="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center shadow-sm"><Check className="w-3 h-3" /></div>;
-      }
-      if (pick.status === BracketPickStatus.incorrect) {
-        return <div className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-sm"><X className="w-3 h-3" /></div>;
-      }
-      if (pick.status === BracketPickStatus.eliminated) {
-        return <div className="w-5 h-5 rounded-full bg-gray-300 text-white flex items-center justify-center"><X className="w-3 h-3" /></div>;
-      }
+      if (pick.status === BracketPickStatus.correct)
+        return <div className="w-4 h-4 rounded-full bg-green-600 text-white flex items-center justify-center"><Check className="w-2.5 h-2.5" /></div>;
+      if (pick.status === BracketPickStatus.incorrect)
+        return <div className="w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center"><X className="w-2.5 h-2.5" /></div>;
+      if (pick.status === BracketPickStatus.eliminated)
+        return <div className="w-4 h-4 rounded-full bg-muted-foreground/30 text-white flex items-center justify-center"><X className="w-2.5 h-2.5" /></div>;
     }
     return null;
   };
 
+  const GolferRow = ({
+    golfer,
+    isBottom,
+  }: {
+    golfer: typeof g1;
+    isBottom?: boolean;
+  }) => {
+    const selected = pick?.selectedGolferId === golfer?.id;
+    const canPick = !isLocked && !!golfer?.id;
+
+    return (
+      <div
+        onClick={() => handleSelect(golfer?.id)}
+        className={cn(
+          "relative flex items-center justify-between px-3 py-2.5 transition-colors",
+          isBottom ? "" : "border-b border-border",
+          canPick && "cursor-pointer",
+          canPick && !selected && "hover:bg-gray-50",
+          selected && "bg-primary/5",
+        )}
+      >
+        {/* Left accent bar when selected */}
+        {selected && (
+          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />
+        )}
+
+        <div className="flex items-center gap-2.5 overflow-hidden">
+          {/* Seed number */}
+          <span className="text-[10px] font-mono text-muted-foreground w-5 text-right shrink-0">
+            {golfer?.seed ?? "–"}
+          </span>
+          {/* Name */}
+          <span
+            className={cn(
+              "text-sm truncate",
+              !golfer ? "text-muted-foreground italic font-normal" : "font-semibold",
+              selected && "text-primary",
+            )}
+          >
+            {golfer?.fullName ?? "TBD"}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          {selected && !isLocked && <Check className="w-3.5 h-3.5 text-primary" />}
+          {renderStatusIcon(golfer?.id)}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className={cn(
-      "flex flex-col border rounded-md overflow-hidden bg-card text-sm shadow-sm transition-all",
-      isLoading && "opacity-50 pointer-events-none"
-    )}>
-      {/* Golfer 1 */}
-      <div 
-        onClick={() => handleSelect(g1?.id)}
-        className={cn(
-          "flex items-center justify-between p-2 border-b cursor-pointer transition-colors relative",
-          !isLocked && "hover:bg-gray-50",
-          pick?.selectedGolferId === g1?.id && "bg-primary/5",
-          isLocked && !pick?.selectedGolferId && "cursor-default"
-        )}
-      >
-        <div className="flex items-center gap-2 overflow-hidden z-10">
-          <span className="text-xs font-mono font-medium text-muted-foreground w-4 text-center">
-            {g1?.seed || "-"}
-          </span>
-          <span className={cn(
-            "font-semibold truncate",
-            !g1 && "text-muted-foreground italic font-normal",
-            pick?.selectedGolferId === g1?.id && "text-primary"
-          )}>
-            {g1?.fullName || "TBD"}
-          </span>
-        </div>
-        
-        {/* Selection Indicator */}
-        <div className="flex items-center gap-2 z-10">
-          {pick?.selectedGolferId === g1?.id && !isLocked && (
-            <Check className="w-4 h-4 text-primary" />
-          )}
-          {renderStatusIcon(g1?.id)}
-        </div>
-
-        {/* Selected styling background */}
-        {pick?.selectedGolferId === g1?.id && (
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
-        )}
-      </div>
-
-      {/* Golfer 2 */}
-      <div 
-        onClick={() => handleSelect(g2?.id)}
-        className={cn(
-          "flex items-center justify-between p-2 cursor-pointer transition-colors relative",
-          !isLocked && "hover:bg-gray-50",
-          pick?.selectedGolferId === g2?.id && "bg-primary/5",
-          isLocked && !pick?.selectedGolferId && "cursor-default"
-        )}
-      >
-        <div className="flex items-center gap-2 overflow-hidden z-10">
-          <span className="text-xs font-mono font-medium text-muted-foreground w-4 text-center">
-            {g2?.seed || "-"}
-          </span>
-          <span className={cn(
-            "font-semibold truncate",
-            !g2 && "text-muted-foreground italic font-normal",
-            pick?.selectedGolferId === g2?.id && "text-primary"
-          )}>
-            {g2?.fullName || "TBD"}
-          </span>
-        </div>
-        
-        {/* Selection Indicator */}
-        <div className="flex items-center gap-2 z-10">
-          {pick?.selectedGolferId === g2?.id && !isLocked && (
-            <Check className="w-4 h-4 text-primary" />
-          )}
-          {renderStatusIcon(g2?.id)}
-        </div>
-
-        {/* Selected styling background */}
-        {pick?.selectedGolferId === g2?.id && (
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
-        )}
-      </div>
+    <div
+      className={cn(
+        "flex flex-col border border-border bg-card shadow-xs overflow-hidden transition-opacity",
+        isLoading && "opacity-50 pointer-events-none"
+      )}
+    >
+      <GolferRow golfer={g1} />
+      <GolferRow golfer={g2} isBottom />
     </div>
   );
 }
 
 export function ChampionshipCard({
   golfer,
-  isLocked
+  isLocked,
 }: {
   golfer?: Golfer;
   isLocked: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center p-6 border-2 border-primary/20 rounded-xl bg-white shadow-xl max-w-xs mx-auto text-center w-full">
-      <div className="w-16 h-16 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full flex items-center justify-center mb-4 shadow-lg border border-yellow-200">
-        <span className="text-3xl">🏆</span>
+    <div className="flex flex-col items-center justify-center p-6 border-2 border-primary bg-white shadow-md max-w-xs mx-auto text-center w-full">
+      {/* Trophy icon */}
+      <div className="w-14 h-14 bg-amber-50 border border-amber-200 flex items-center justify-center mb-4">
+        <span className="text-3xl leading-none">🏆</span>
       </div>
-      <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
+
+      <p className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground mb-2">
         U.S. Amateur Champion
-      </h3>
+      </p>
+
       {golfer ? (
-        <div className="font-heading font-bold text-2xl text-foreground">
-          {golfer.fullName}
-        </div>
+        <p className="font-bold text-xl text-foreground">{golfer.fullName}</p>
       ) : (
-        <div className="font-heading text-xl text-muted-foreground italic">
-          Make Final Pick
-        </div>
+        <p className="text-base text-muted-foreground italic">Make final pick</p>
       )}
-      
+
       {isLocked && golfer && (
-        <div className="mt-4 text-xs font-semibold px-3 py-1 bg-secondary text-secondary-foreground rounded-full">
-          LOCKED
+        <div className="mt-3 text-[10px] font-bold px-2.5 py-1 bg-secondary text-secondary-foreground rounded-sm tracking-widest uppercase">
+          Locked
         </div>
       )}
     </div>

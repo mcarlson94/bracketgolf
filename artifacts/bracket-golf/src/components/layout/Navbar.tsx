@@ -26,83 +26,89 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { label: "Dashboard", href: "/dashboard", protected: true },
     { label: "Leaderboard", href: "/leaderboard", protected: false },
-    { label: "Groups", href: "/groups", protected: true },
     { label: "Tournament", href: "/tournament", protected: false },
+    { label: "Dashboard", href: "/dashboard", protected: true },
+    { label: "Groups", href: "/groups", protected: true },
   ];
 
   return (
-    <nav className="bg-secondary text-secondary-foreground border-b border-white/10 sticky top-0 z-50">
+    <nav className="bg-secondary text-secondary-foreground sticky top-0 z-50 shadow-sm">
+      {/* Top bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-bold font-heading">
-                BG
-              </div>
-              <span className="font-heading font-bold text-xl tracking-tight hidden sm:block">
-                Bracket Golf
-              </span>
-            </Link>
-            
-            <div className="hidden md:ml-8 md:flex md:space-x-4">
-              {navLinks.map((link) => {
-                if (link.protected && !user) return null;
-                const isActive = location.startsWith(link.href);
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      isActive
-                        ? "bg-white/10 text-white"
-                        : "text-gray-300 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
+        <div className="flex justify-between h-14 items-center">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-7 h-7 bg-primary rounded-sm flex items-center justify-center">
+              <span className="text-white font-bold text-xs tracking-tight">BG</span>
             </div>
+            <span className="font-heading font-bold text-base tracking-tight hidden sm:block text-white">
+              Bracket Golf
+            </span>
+          </Link>
+
+          {/* Desktop nav links — underline style */}
+          <div className="hidden md:flex items-end gap-6 h-full">
+            {navLinks.map((link) => {
+              if (link.protected && !user) return null;
+              const isActive = location === link.href || location.startsWith(link.href + "/");
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`
+                    h-full flex items-center text-sm font-medium transition-colors pb-0
+                    border-b-2 
+                    ${isActive
+                      ? "border-primary text-white"
+                      : "border-transparent text-white/60 hover:text-white hover:border-white/30"}
+                  `}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
-          
-          <div className="flex items-center gap-4">
+
+          {/* Right side: auth */}
+          <div className="flex items-center gap-3">
             {user ? (
               <div className="hidden md:flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-300">
-                  {user.name}
-                </span>
-                <Button variant="outline" size="sm" onClick={handleLogout} className="border-white/20 text-white hover:bg-white/10">
+                <span className="text-sm text-white/60 font-medium">{user.name}</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-white/60 hover:text-white transition-colors font-medium"
+                >
                   Sign out
-                </Button>
+                </button>
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-4">
-                <Link href="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                <Link href="/login" className="text-sm text-white/60 hover:text-white transition-colors font-medium">
                   Sign in
                 </Link>
                 <Link href="/login">
-                  <Button size="sm" className="font-semibold">
-                    Play Now
+                  <Button size="sm" className="font-semibold h-8 px-4 rounded-sm">
+                    Make Your Picks
                   </Button>
                 </Link>
               </div>
             )}
-            
-            <div className="md:hidden flex items-center">
+
+            {/* Mobile hamburger */}
+            <div className="md:hidden">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-white">
-                    <Menu className="h-6 w-6" />
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-8 w-8">
+                    <Menu className="h-5 w-5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-secondary text-white border-white/10">
+                <DropdownMenuContent align="end" className="w-48 bg-secondary text-white border-white/10 rounded-sm">
                   {navLinks.map((link) => {
                     if (link.protected && !user) return null;
                     return (
                       <DropdownMenuItem key={link.href} asChild>
-                        <Link href={link.href} className="cursor-pointer">
+                        <Link href={link.href} className="cursor-pointer text-white/80 hover:text-white">
                           {link.label}
                         </Link>
                       </DropdownMenuItem>
@@ -114,8 +120,8 @@ export function Navbar() {
                     </DropdownMenuItem>
                   ) : (
                     <DropdownMenuItem asChild>
-                      <Link href="/login" className="cursor-pointer text-primary">
-                        Sign in / Play Now
+                      <Link href="/login" className="cursor-pointer text-primary font-medium">
+                        Sign in / Make Picks
                       </Link>
                     </DropdownMenuItem>
                   )}
@@ -123,6 +129,16 @@ export function Navbar() {
               </DropdownMenu>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Championship sub-banner (visible on all pages) */}
+      <div className="bg-secondary border-t border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center justify-between">
+          <span className="text-xs text-white/40 tracking-wide uppercase font-medium">
+            2026 U.S. Amateur Championship · Merion Golf Club
+          </span>
+          <span className="text-xs text-white/30">Aug 10–16, 2026</span>
         </div>
       </div>
     </nav>
