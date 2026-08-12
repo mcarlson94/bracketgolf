@@ -1,0 +1,1 @@
+- [USGA live API](usga-api.md) — ace-api.usga.org is the real USGA scoring API; requires Referer/Origin headers from the championship page to bypass Akamai
