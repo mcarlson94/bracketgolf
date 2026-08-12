@@ -3,13 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Bracket Golf API - U.S. Amateur Bracket Challenge
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: tournament
+    description: Tournament data
+  - name: golfers
+    description: Golfer data
+  - name: matchups
+    description: Matchup data
+  - name: brackets
+    description: User bracket operations
+  - name: picks
+    description: Bracket pick operations
+  - name: leaderboard
+    description: Leaderboard operations
+  - name: groups
+    description: Group operations
+  - name: admin
+    description: Admin operations
+
 paths:
   /healthz:
     get:
@@ -24,6 +43,403 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # --- AUTH ---
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login or register by name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in or registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user from session
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out current user
+      responses:
+        "200":
+          description: Logged out
+
+  # --- TOURNAMENT ---
+  /tournament:
+    get:
+      operationId: getTournament
+      tags: [tournament]
+      summary: Get the active tournament
+      responses:
+        "200":
+          description: Active tournament
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+        "404":
+          description: No active tournament
+
+  # --- GOLFERS ---
+  /tournament/golfers:
+    get:
+      operationId: getGolfers
+      tags: [golfers]
+      summary: Get all golfers in the active tournament
+      responses:
+        "200":
+          description: List of golfers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Golfer"
+
+  # --- MATCHUPS ---
+  /tournament/matchups:
+    get:
+      operationId: getMatchups
+      tags: [matchups]
+      summary: Get all matchups for the active tournament
+      responses:
+        "200":
+          description: List of matchups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Matchup"
+
+  # --- BRACKETS ---
+  /brackets:
+    get:
+      operationId: getBrackets
+      tags: [brackets]
+      summary: Get all brackets for the current user
+      responses:
+        "200":
+          description: User's brackets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bracket"
+    post:
+      operationId: createBracket
+      tags: [brackets]
+      summary: Create a new bracket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BracketInput"
+      responses:
+        "201":
+          description: Created bracket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bracket"
+
+  /brackets/{bracketId}:
+    get:
+      operationId: getBracket
+      tags: [brackets]
+      summary: Get a specific bracket with picks
+      parameters:
+        - name: bracketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bracket with picks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BracketWithPicks"
+        "404":
+          description: Bracket not found
+    delete:
+      operationId: deleteBracket
+      tags: [brackets]
+      summary: Delete a bracket
+      parameters:
+        - name: bracketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+
+  /brackets/{bracketId}/submit:
+    post:
+      operationId: submitBracket
+      tags: [brackets]
+      summary: Submit a completed bracket
+      parameters:
+        - name: bracketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Submitted bracket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bracket"
+
+  # --- PICKS ---
+  /brackets/{bracketId}/picks:
+    get:
+      operationId: getBracketPicks
+      tags: [picks]
+      summary: Get all picks for a bracket
+      parameters:
+        - name: bracketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bracket picks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BracketPick"
+    put:
+      operationId: savePick
+      tags: [picks]
+      summary: Save or update a single pick (autosave)
+      parameters:
+        - name: bracketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PickInput"
+      responses:
+        "200":
+          description: Updated picks for this bracket
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BracketPick"
+
+  # --- LEADERBOARD ---
+  /leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get global leaderboard
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: number
+        - name: limit
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaderboardResponse"
+
+  # --- GROUPS ---
+  /groups:
+    get:
+      operationId: getGroups
+      tags: [groups]
+      summary: Get groups the current user belongs to
+      responses:
+        "200":
+          description: User's groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+    post:
+      operationId: createGroup
+      tags: [groups]
+      summary: Create a new group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupInput"
+      responses:
+        "201":
+          description: Created group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+
+  /groups/join:
+    post:
+      operationId: joinGroup
+      tags: [groups]
+      summary: Join a group by join code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinGroupInput"
+      responses:
+        "200":
+          description: Joined group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+
+  /groups/{groupId}:
+    get:
+      operationId: getGroup
+      tags: [groups]
+      summary: Get a group with its leaderboard
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Group with leaderboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupWithLeaderboard"
+
+  # --- ADMIN ---
+  /admin/import:
+    post:
+      operationId: adminImport
+      tags: [admin]
+      summary: Import or refresh USGA tournament data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminImportInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /admin/tournament:
+    patch:
+      operationId: adminUpdateTournament
+      tags: [admin]
+      summary: Update tournament settings (lock time, status)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TournamentUpdate"
+      responses:
+        "200":
+          description: Updated tournament
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+
+  /admin/matchups/{matchupId}:
+    patch:
+      operationId: adminUpdateMatchup
+      tags: [admin]
+      summary: Manually update matchup result
+      parameters:
+        - name: matchupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchupUpdate"
+      responses:
+        "200":
+          description: Updated matchup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Matchup"
+
+  /admin/rescore:
+    post:
+      operationId: adminRescore
+      tags: [admin]
+      summary: Trigger bracket rescoring after results update
+      responses:
+        "200":
+          description: Rescore result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RescoreResult"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +450,427 @@ components:
       required:
         - status
 
+    # --- AUTH ---
+    LoginInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    User:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+
+    # --- TOURNAMENT ---
+    Tournament:
+      type: object
+      required: [id, name, year, slug, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        year:
+          type: number
+        slug:
+          type: string
+        status:
+          type: string
+          enum: [upcoming, active, locked, completed]
+        lockTime:
+          type: ["string", "null"]
+        sourceUrl:
+          type: ["string", "null"]
+        lastSyncedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    TournamentUpdate:
+      type: object
+      properties:
+        lockTime:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [upcoming, active, locked, completed]
+
+    # --- GOLFER ---
+    Golfer:
+      type: object
+      required: [id, tournamentId, fullName, seed, eliminated, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        tournamentId:
+          type: string
+        externalId:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        fullName:
+          type: string
+        seed:
+          type: number
+        ranking:
+          type: ["integer", "null"]
+        college:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+        eliminated:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    # --- MATCHUP ---
+    Matchup:
+      type: object
+      required: [id, tournamentId, round, roundNumber, position, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        tournamentId:
+          type: string
+        externalId:
+          type: ["string", "null"]
+        round:
+          type: string
+          enum: [R64, R32, R16, QF, SF, F]
+        roundNumber:
+          type: number
+        position:
+          type: number
+        golfer1Id:
+          type: ["string", "null"]
+        golfer2Id:
+          type: ["string", "null"]
+        winnerId:
+          type: ["string", "null"]
+        nextMatchupId:
+          type: ["string", "null"]
+        nextSlot:
+          type: ["integer", "null"]
+        matchScore:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [scheduled, live, completed]
+        sourceUpdatedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        golfer1:
+          $ref: "#/components/schemas/Golfer"
+        golfer2:
+          $ref: "#/components/schemas/Golfer"
+        winner:
+          $ref: "#/components/schemas/Golfer"
+
+    MatchupUpdate:
+      type: object
+      properties:
+        winnerId:
+          type: ["string", "null"]
+        matchScore:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [scheduled, live, completed]
+
+    # --- BRACKET ---
+    BracketInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    Bracket:
+      type: object
+      required: [id, userId, tournamentId, name, submitted, score, maxPossibleScore, totalPicks, completedPicks, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        tournamentId:
+          type: string
+        name:
+          type: string
+        submitted:
+          type: boolean
+        submittedAt:
+          type: ["string", "null"]
+        score:
+          type: number
+        maxPossibleScore:
+          type: number
+        rank:
+          type: ["integer", "null"]
+        totalPicks:
+          type: number
+        completedPicks:
+          type: number
+        championGolferId:
+          type: ["string", "null"]
+        championName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    BracketWithPicks:
+      type: object
+      required: [id, userId, tournamentId, name, submitted, score, maxPossibleScore, totalPicks, completedPicks, picks, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        tournamentId:
+          type: string
+        name:
+          type: string
+        submitted:
+          type: boolean
+        submittedAt:
+          type: ["string", "null"]
+        score:
+          type: number
+        maxPossibleScore:
+          type: number
+        rank:
+          type: ["integer", "null"]
+        totalPicks:
+          type: number
+        completedPicks:
+          type: number
+        championGolferId:
+          type: ["string", "null"]
+        championName:
+          type: ["string", "null"]
+        picks:
+          type: array
+          items:
+            $ref: "#/components/schemas/BracketPick"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    # --- BRACKET PICK ---
+    PickInput:
+      type: object
+      required: [matchupId, selectedGolferId]
+      properties:
+        matchupId:
+          type: string
+        selectedGolferId:
+          type: string
+
+    BracketPick:
+      type: object
+      required: [id, bracketId, matchupId, selectedGolferId, round, roundNumber, pointsPossible, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        bracketId:
+          type: string
+        matchupId:
+          type: string
+        selectedGolferId:
+          type: string
+        round:
+          type: string
+          enum: [R64, R32, R16, QF, SF, F]
+        roundNumber:
+          type: number
+        pointsPossible:
+          type: number
+        status:
+          type: string
+          enum: [pending, correct, incorrect, eliminated]
+        isCorrect:
+          type: ["boolean", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    # --- LEADERBOARD ---
+    LeaderboardEntry:
+      type: object
+      required: [rank, bracketId, bracketName, userId, userName, score, maxPossibleScore]
+      properties:
+        rank:
+          type: number
+        bracketId:
+          type: string
+        bracketName:
+          type: string
+        userId:
+          type: string
+        userName:
+          type: string
+        score:
+          type: number
+        maxPossibleScore:
+          type: number
+        championName:
+          type: ["string", "null"]
+
+    LeaderboardResponse:
+      type: object
+      required: [entries, total, currentUserRank]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        total:
+          type: number
+        currentUserRank:
+          type: ["integer", "null"]
+
+    # --- GROUPS ---
+    GroupInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+
+    JoinGroupInput:
+      type: object
+      required: [joinCode]
+      properties:
+        joinCode:
+          type: string
+
+    Group:
+      type: object
+      required: [id, tournamentId, name, joinCode, createdByUserId, memberCount, createdAt]
+      properties:
+        id:
+          type: string
+        tournamentId:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        joinCode:
+          type: string
+        createdByUserId:
+          type: string
+        memberCount:
+          type: number
+        createdAt:
+          type: string
+
+    GroupWithLeaderboard:
+      type: object
+      required: [id, tournamentId, name, joinCode, createdByUserId, memberCount, members, leaderboard, createdAt]
+      properties:
+        id:
+          type: string
+        tournamentId:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        joinCode:
+          type: string
+        createdByUserId:
+          type: string
+        memberCount:
+          type: number
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        leaderboard:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        createdAt:
+          type: string
+
+    # --- ADMIN ---
+    AdminImportInput:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [import, refresh]
+
+    ImportResult:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        golfersImported:
+          type: ["integer", "null"]
+        matchupsImported:
+          type: ["integer", "null"]
+        resultsUpdated:
+          type: ["integer", "null"]
+        errors:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: string
+
+    RescoreResult:
+      type: object
+      required: [success, bracketsRescored]
+      properties:
+        success:
+          type: boolean
+        bracketsRescored:
+          type: number
+        message:
+          type: string

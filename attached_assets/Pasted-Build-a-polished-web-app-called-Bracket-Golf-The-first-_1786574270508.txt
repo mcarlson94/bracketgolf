@@ -1,0 +1,1985 @@
+Build a polished web app called Bracket Golf.
+
+The first and primary focus is to build a Tournament Challenge-style bracket contest for the U.S. Amateur Golf Championship.
+
+The product should look, feel, and work incredibly similarly to ESPN Tournament Challenge, but for the U.S. Amateur match-play bracket.
+
+This is the primary focus.
+
+I care much more about making the bracket experience look and feel incredible than building a bunch of secondary features.
+
+The application should use the real U.S. Amateur field, bracket, and results from the official USGA championship website.
+
+Do not make up player names.
+
+Do not generate fake golfers.
+
+Do not generate fake matchups.
+
+Do not populate the product with fictional U.S. Amateur data.
+
+Use actual tournament data.
+
+---
+
+# PRODUCT VISION
+
+The concept is simple:
+
+ESPN Tournament Challenge, but for the U.S. Amateur.
+
+The U.S. Amateur starts with stroke play and then moves into a 64-player single-elimination match-play bracket.
+
+Once the official 64-player match-play bracket is set, users should be able to fill out the entire bracket by predicting the winner of every match through the championship.
+
+There are:
+
+- 64 golfers
+- 63 matches
+- 6 rounds
+
+Rounds:
+
+- Round of 64
+- Round of 32
+- Round of 16
+- Quarterfinals
+- Semifinals
+- Championship
+
+Users select the winner of each matchup.
+
+When a golfer is selected, that golfer automatically advances to the next round.
+
+Users continue making picks until they select their projected U.S. Amateur champion.
+
+The experience should feel extremely familiar to anyone who has ever filled out a March Madness bracket on ESPN Tournament Challenge.
+
+---
+
+# MOST IMPORTANT PRODUCT REQUIREMENT
+
+The bracket itself is the product.
+
+Spend disproportionate effort on:
+
+- Bracket UX
+- Bracket interactions
+- Matchup cards
+- Automatic advancement
+- Pick states
+- Responsive behavior
+- Mobile usability
+- Desktop usability
+- Visual polish
+- Progress tracking
+- Championship selection
+- Live scoring after the tournament starts
+
+I would rather have an incredible bracket with basic account functionality than a feature-rich app with a mediocre bracket.
+
+Do not make this feel like:
+
+- A spreadsheet
+- A generic bracket generator
+- A basic Bootstrap dashboard
+- A form
+- 63 dropdown fields
+- A basic list of golfers
+- An internal admin tool
+
+This should feel like a legitimate consumer sports product.
+
+---
+
+# BRAND
+
+Product name:
+
+Bracket Golf
+
+Primary event:
+
+U.S. Amateur Bracket Challenge
+
+Hero copy:
+
+2026 U.S. Amateur Bracket Challenge
+
+Subheading:
+
+64 golfers. 63 matches. One champion.
+
+Supporting copy:
+
+Build your bracket and compete against golf fans throughout the U.S. Amateur.
+
+Primary CTA:
+
+Make Your Picks
+
+Secondary CTA:
+
+View Leaderboard
+
+The branding should be independent from the USGA.
+
+Do not use USGA logos or imply that this is an official USGA product.
+
+Include a small footer disclaimer:
+
+Bracket Golf is an independent tournament challenge and is not affiliated with or endorsed by the USGA.
+
+---
+
+# DESIGN DIRECTION
+
+The app should feel like a combination of:
+
+- ESPN Tournament Challenge
+- ESPN Fantasy
+- Premium golf media
+- Modern sports apps
+- Modern tournament tracking products
+
+Do not copy ESPN branding, logos, proprietary graphics, or exact visual assets.
+
+Use ESPN Tournament Challenge primarily as inspiration for:
+
+- Information architecture
+- Bracket interaction patterns
+- Tournament progression
+- Pick selection
+- Leaderboards
+- Group play
+- Bracket review
+- Scoring states
+
+Visual feel:
+
+- Premium
+- Competitive
+- Modern
+- Golf-focused
+- Sports-focused
+- Clean
+- Fast
+- Energetic
+- Easy to understand
+
+Suggested palette:
+
+- Dark navy or charcoal header
+- White/light content backgrounds
+- Selective green accents
+- Neutral grays
+- Strong contrast
+
+Do not make the entire application green.
+
+Use:
+
+- Strong modern typography
+- Good spacing
+- Subtle borders
+- Clear selected states
+- Clear hover states
+- Rounded cards where appropriate
+- Minimal unnecessary decoration
+
+Avoid excessive gradients, glassmorphism, giant rounded cards, and generic AI SaaS visual styling.
+
+This is a sports product.
+
+---
+
+# REAL U.S. AMATEUR DATA
+
+This is critical.
+
+The application must use the actual U.S. Amateur Championship data from the official USGA championship website.
+
+The official USGA championship website should be treated as the primary source of truth.
+
+Do not invent missing information.
+
+The app should retrieve and store the actual:
+
+- 64-player match-play field
+- Seeds
+- Round of 64 matchups
+- Golfer names
+- Bracket positions
+- Subsequent-round matchups as they become known
+- Match winners
+- Match status where available
+- Match scores/results where available
+- Tournament progression
+
+If additional real player information is available, also store:
+
+- Amateur ranking
+- College
+- Country
+- Player photo
+
+But these are secondary.
+
+Do not invent these fields if they are unavailable.
+
+The most important real data is:
+
+- Player name
+- Seed
+- Matchup
+- Bracket position
+- Round
+- Result
+- Winner
+
+---
+
+# USGA DATA INGESTION
+
+Create a dedicated tournament-data ingestion layer.
+
+Possible names:
+
+USGADataService
+
+TournamentDataImporter
+
+USGAImporter
+
+All source-specific USGA logic should live inside this service.
+
+The rest of the application should never depend directly on the structure of the USGA website.
+
+Architecture:
+
+USGA source → ingestion service → our database → Bracket Golf app
+
+The public frontend should read tournament data from our database.
+
+Do not scrape the USGA site on every frontend page load.
+
+---
+
+# DETERMINE THE BEST DATA SOURCE
+
+Before building brittle HTML scraping, inspect how the official USGA tournament website loads its data.
+
+Look for:
+
+- Public JSON endpoints
+- API requests used by the USGA frontend
+- Embedded page JSON
+- Structured script data
+- GraphQL requests
+- REST endpoints
+- Tournament feeds
+- Structured HTML
+
+Prefer a structured data source whenever possible.
+
+The preferred order is:
+
+1. Existing structured API/feed
+2. Embedded structured JSON
+3. Structured HTML parsing
+4. Server-side scraping as a last resort
+
+Do not build fragile scraping around arbitrary visual CSS selectors if the page is already using a structured endpoint underneath.
+
+Keep the entire integration isolated so it can be replaced later if the USGA changes its site.
+
+---
+
+# INITIAL DATA IMPORT
+
+Create an admin route:
+
+/admin
+
+No real authentication is required for admin yet.
+
+Add a section:
+
+Tournament Data
+
+Buttons:
+
+Import U.S. Amateur Bracket
+
+Refresh Tournament Data
+
+Display:
+
+Last Updated: [timestamp]
+
+On initial import:
+
+1. Retrieve the real U.S. Amateur match-play bracket.
+2. Parse the 64 golfers.
+3. Parse their seeds.
+4. Parse the exact Round of 64 matchups.
+5. Preserve the actual bracket ordering.
+6. Create the tournament records.
+7. Create golfer records.
+8. Create matchup records.
+
+Do not reorder the golfers.
+
+Do not randomly create the bracket.
+
+The application must mirror the real U.S. Amateur bracket.
+
+---
+
+# FAILURE BEHAVIOR
+
+If live USGA data cannot immediately be imported, do not generate fake data.
+
+Instead show:
+
+Tournament data has not been imported yet.
+
+Continue building the application structure and bracket interface, but do not present fictional golfers as actual U.S. Amateur competitors.
+
+This requirement is important.
+
+---
+
+# DATA REFRESHES
+
+When tournament data is refreshed:
+
+- Update golfer records
+- Update matchup records
+- Update results
+- Update match status
+- Update winners
+- Update match scores
+- Do not create duplicate golfers
+- Do not create duplicate matchups
+- Do not erase user predictions
+- Do not replace user predictions with actual outcomes
+
+Prediction data and real tournament data must remain separate.
+
+---
+
+# TEMPORARY USER LOGIN
+
+Do not spend time building real authentication yet.
+
+For this MVP, login is intentionally primitive.
+
+Landing/login screen:
+
+Enter Your Name
+
+Input example:
+
+Matt
+
+Button:
+
+Continue
+
+Behavior:
+
+If someone enters:
+
+Matt
+
+then look for the user named Matt.
+
+If Matt already exists:
+
+Log them into Matt's account.
+
+If Matt does not exist:
+
+Create a new account named Matt.
+
+There is:
+
+- No password
+- No email
+- No verification
+- No account security
+
+I understand that anyone can type Matt and access Matt's account.
+
+That is intentional for this prototype.
+
+The purpose is to make testing extremely easy while we focus on the bracket.
+
+---
+
+# AUTHENTICATION ARCHITECTURE
+
+Even though temporary login is intentionally bad, architect it so real authentication can be swapped in later.
+
+Do not tightly couple bracket ownership to a user name string.
+
+Use normal internal user IDs.
+
+Example:
+
+User:
+
+id: uuid
+
+name: Matt
+
+Brackets belong to:
+
+userId
+
+Later we should be able to replace temporary login with:
+
+- Email/password
+- Magic links
+- Google
+- Apple
+- OAuth
+
+without rebuilding the bracket system.
+
+---
+
+# MAIN USER FLOW
+
+The primary flow should be:
+
+1. User lands on Bracket Golf.
+2. User sees the U.S. Amateur Bracket Challenge hero.
+3. User clicks Make Your Picks.
+4. User enters their name.
+5. User arrives at their dashboard.
+6. User clicks Create a Bracket.
+7. User names their bracket.
+8. User begins filling out the real U.S. Amateur bracket.
+9. User selects winners.
+10. Winners automatically advance.
+11. User completes all 63 picks.
+12. User selects their champion.
+13. User submits the bracket.
+14. User sees a polished completion screen.
+15. User returns to dashboard.
+16. User can reopen their bracket.
+17. Picks remain saved.
+18. Once real tournament results are imported, their bracket receives a score.
+19. Their leaderboard ranking updates.
+
+This flow must work end-to-end.
+
+---
+
+# MAIN NAVIGATION
+
+Desktop navigation:
+
+Bracket Golf
+
+Navigation items:
+
+- My Brackets
+- Leaderboard
+- Groups
+- Tournament
+
+Right side:
+
+Current user's name.
+
+Example:
+
+Matt
+
+Include:
+
+Sign Out
+
+Mobile navigation should be simplified into an appropriate mobile nav.
+
+---
+
+# LANDING PAGE
+
+Build a polished public landing page.
+
+Hero:
+
+2026 U.S. Amateur Bracket Challenge
+
+64 golfers. 63 matches. One champion.
+
+Supporting copy:
+
+Build your bracket and compete against golf fans throughout the U.S. Amateur.
+
+CTA:
+
+Make Your Picks
+
+Secondary CTA:
+
+View Leaderboard
+
+Include a visual preview of the bracket if possible.
+
+Below the hero:
+
+## How It Works
+
+1. Pick every match
+2. Submit your bracket
+3. Follow the tournament
+4. Climb the leaderboard
+
+Also include tournament status information if available.
+
+Example:
+
+Picks Lock Wednesday at 8:00 AM ET
+
+or
+
+Bracket Challenge is Live
+
+or
+
+Tournament In Progress
+
+---
+
+# USER DASHBOARD
+
+After login, show a premium dashboard.
+
+Top section:
+
+2026 U.S. Amateur Bracket Challenge
+
+Supporting line:
+
+Think you know who will win the Havemeyer Trophy?
+
+Primary CTA:
+
+Create a Bracket
+
+Below:
+
+## My Brackets
+
+Bracket cards should show:
+
+- Bracket name
+- Completion percentage
+- Picks completed
+- Status
+- Current score
+- Maximum possible score
+- Current rank
+- Champion pick
+- Date created
+
+Possible statuses:
+
+- In Progress
+- Complete
+- Submitted
+- Locked
+- Live
+- Finished
+
+Example card:
+
+Carlson Chalk
+
+Champion: Jackson Koivun
+
+Picks: 63 / 63
+
+Score: 78
+
+Max: 142
+
+Rank: #124
+
+Button:
+
+View Bracket
+
+If incomplete:
+
+Continue Picking
+
+---
+
+# CREATE BRACKET
+
+Button:
+
+Create a Bracket
+
+Prompt:
+
+Name Your Bracket
+
+Placeholder:
+
+Matt's Bracket
+
+Button:
+
+Start Picking
+
+Bracket names should not need to be unique globally.
+
+---
+
+# BRACKET UX
+
+This is the single most important screen.
+
+Build a real tournament bracket experience.
+
+Do not use dropdowns.
+
+Every matchup should be visually represented.
+
+Each matchup contains two golfers.
+
+Example:
+
+1 Jackson Koivun
+
+Auburn
+
+vs.
+
+64 John Doe
+
+Florida State
+
+However, only show college or additional information if that data is real and actually imported.
+
+At minimum show:
+
+- Seed
+- Golfer name
+
+Optional real data:
+
+- College
+- Country
+- Ranking
+- Headshot
+
+---
+
+# PICKING A WINNER
+
+The user should click or tap directly on a golfer.
+
+Selected golfer:
+
+- Highlights visually
+- Gets a checkmark or selection indicator
+- Automatically advances to the next matchup
+- Produces a subtle animation
+- Immediately autosaves
+
+The other golfer becomes visually de-emphasized.
+
+Keep selection interactions quick.
+
+Avoid confirmation dialogs for every pick.
+
+---
+
+# BRACKET PROPAGATION LOGIC
+
+This is extremely important.
+
+Suppose:
+
+Round of 64:
+
+Player A vs Player B
+
+User selects:
+
+Player A
+
+Player A automatically appears in the appropriate Round of 32 matchup.
+
+Then the user selects Player A in the Round of 32.
+
+Then Player A advances to the Round of 16.
+
+Then the user selects Player A again.
+
+Later, the user changes their original Round of 64 selection to Player B.
+
+The application must:
+
+1. Advance Player B to the Round of 32.
+2. Remove Player A from that Round of 32 slot.
+3. Identify downstream picks involving Player A that are no longer logically possible.
+4. Clear those invalid downstream predictions.
+5. Require the user to make new picks.
+
+Do not allow impossible bracket combinations.
+
+Bracket dependency logic should be thoroughly tested.
+
+---
+
+# DESKTOP BRACKET
+
+Desktop should visually feel like a real tournament bracket.
+
+Possible structure:
+
+Left side of bracket progresses toward center.
+
+Right side progresses toward center.
+
+Championship is in the middle.
+
+Alternatively, use a horizontally progressive Tournament Challenge-style layout.
+
+Prioritize usability.
+
+Allow horizontal scrolling.
+
+Round headers should remain clear.
+
+Possible sticky round headers:
+
+- Round of 64
+- Round of 32
+- Round of 16
+- Quarterfinals
+- Semifinals
+- Final
+
+Do not attempt to fit every matchup into a tiny unreadable viewport.
+
+---
+
+# MOBILE BRACKET
+
+Mobile is extremely important.
+
+Do not simply scale down the desktop bracket.
+
+Create a purpose-built mobile bracket experience.
+
+At the top show a round navigator:
+
+R64 | R32 | R16 | QF | SF | Final
+
+Allow users to tap between rounds.
+
+If natural to implement, also support swiping.
+
+Within a round, matchup cards are stacked vertically.
+
+The user taps a golfer to advance them.
+
+At the bottom or sticky UI show:
+
+43 / 63 Picks Made
+
+68% Complete
+
+Also include:
+
+Next Incomplete Pick
+
+Tapping it should take the user to the next unresolved matchup.
+
+Mobile users should never need to pinch zoom.
+
+---
+
+# BRACKET PROGRESS
+
+Show completion prominently.
+
+Example:
+
+45 of 63 picks made
+
+Progress bar.
+
+Percentage:
+
+71% Complete
+
+Once all 63 picks have been made:
+
+Your bracket is complete.
+
+Show:
+
+Submit Bracket
+
+---
+
+# AUTOSAVE
+
+Every pick should autosave immediately.
+
+Do not make users click Save.
+
+Show a subtle state:
+
+Saving...
+
+then:
+
+Saved
+
+If the user exits the browser and returns, their bracket should remain exactly as they left it.
+
+---
+
+# BRACKET SUBMISSION
+
+Once all 63 picks are completed:
+
+Button:
+
+Submit Bracket
+
+After submission, show a premium success state.
+
+Example:
+
+Bracket Submitted
+
+Your road to the U.S. Amateur title is officially locked in.
+
+Show:
+
+Champion pick.
+
+Score initially:
+
+0
+
+Rank initially:
+
+—
+
+Allow the user to return to their dashboard.
+
+---
+
+# PICKS LOCK
+
+Create a configurable tournament lock time.
+
+Store this on the tournament record.
+
+Admin should be able to edit it.
+
+Before lock:
+
+Users may:
+
+- Create brackets
+- Edit brackets
+- Submit brackets
+- Reopen submitted brackets
+- Change picks
+
+After lock:
+
+Users may:
+
+- View brackets
+- View results
+- View scores
+- View leaderboard
+
+Users may not:
+
+- Change picks
+- Create new competitive brackets unless explicitly permitted later
+
+Display:
+
+Picks Lock: [date/time]
+
+---
+
+# CHAMPIONSHIP PICK
+
+Make the final winner selection feel special.
+
+Section:
+
+YOUR U.S. AMATEUR CHAMPION
+
+Include:
+
+🏆
+
+Selected golfer name.
+
+Optional real details.
+
+Example:
+
+Jackson Koivun
+
+Your U.S. Amateur Champion
+
+This should feel visually elevated and rewarding.
+
+---
+
+# USER BRACKET AFTER LOCK
+
+After lock, the bracket should become a live tracking product.
+
+Each prediction can have one of these statuses:
+
+### Pending
+
+Match has not finished.
+
+### Correct
+
+User selected the actual winner.
+
+### Incorrect
+
+User selected the loser in a completed match.
+
+### Eliminated
+
+The golfer was selected in a future round but has already been eliminated earlier.
+
+### Live
+
+Use if reliable match status data is available.
+
+---
+
+# PRESERVE FUTURE ELIMINATED PICKS
+
+This is important.
+
+Suppose Matt predicts Golfer A to reach the semifinals.
+
+Golfer A loses in the Round of 64.
+
+Do not delete Matt's future Golfer A picks after brackets lock.
+
+Those were part of Matt's submitted prediction.
+
+Instead:
+
+Round of 64:
+
+Incorrect
+
+Future rounds:
+
+Eliminated
+
+Keep them visible.
+
+This is how a real Tournament Challenge product should behave.
+
+Before lock, invalid future picks caused by the user changing an earlier selection can be cleared.
+
+After lock, historical picks must remain intact.
+
+---
+
+# SCORING
+
+Use this initial scoring system:
+
+Round of 64:
+
+1 point
+
+Round of 32:
+
+2 points
+
+Round of 16:
+
+4 points
+
+Quarterfinals:
+
+8 points
+
+Semifinals:
+
+16 points
+
+Championship:
+
+32 points
+
+Keep this scoring configuration in one centralized location so it can easily be changed later.
+
+Each bracket should calculate:
+
+- Current score
+- Maximum possible score
+- Correct picks
+- Incorrect picks
+- Remaining live picks
+- Total picks
+- Overall rank
+- Group ranks
+
+---
+
+# MAXIMUM POSSIBLE SCORE
+
+Calculate maximum possible score dynamically.
+
+If a user's golfer has been eliminated, points associated with impossible future picks should no longer count toward maximum possible score.
+
+Example:
+
+Matt picked Golfer A to win four rounds.
+
+Golfer A loses immediately.
+
+Those future potential points disappear from Matt's maximum possible score.
+
+This number should update as tournament results come in.
+
+---
+
+# REAL TOURNAMENT RESULTS
+
+Tournament results come from the USGA data ingestion service.
+
+When results refresh:
+
+Compare every bracket prediction with the actual outcome.
+
+Update scoring automatically.
+
+Do not require manual recalculation.
+
+Leaderboard should update accordingly.
+
+---
+
+# TOURNAMENT MATCH RESULTS
+
+Matchups should support result formats common in match play.
+
+Examples:
+
+3 & 2
+
+1 UP
+
+5 & 4
+
+20 holes
+
+Store match result as a string if necessary.
+
+Do not attempt to convert match-play scoring into stroke-play scoring.
+
+---
+
+# ACTUAL TOURNAMENT PAGE
+
+Create a page:
+
+Tournament
+
+Title:
+
+2026 U.S. Amateur
+
+This page shows the real championship bracket and results.
+
+This is separate from a user's prediction bracket.
+
+Show:
+
+- Real golfer names
+- Real matchups
+- Winners
+- Match results
+- Round
+- Status
+
+Allow users to toggle from their bracket between:
+
+My Picks
+
+and
+
+Tournament Results
+
+Make the transition intuitive.
+
+---
+
+# LEADERBOARD
+
+Create a polished global leaderboard.
+
+Title:
+
+U.S. Amateur Challenge Leaderboard
+
+Columns:
+
+- Rank
+- Bracket
+- Player
+- Score
+- Max
+- Champion
+
+Example:
+
+1
+
+Sunday Red
+
+Jake Thompson
+
+112
+
+168
+
+Jackson Koivun
+
+Allow clicking any bracket once picks are publicly viewable.
+
+Show logged-in user's ranking prominently.
+
+Example:
+
+Your Rank
+
+#183 of 4,219
+
+Use real app user counts, not fake thousands.
+
+Do not fabricate participation numbers.
+
+If there are 8 brackets, show 8.
+
+---
+
+# BRACKET PRIVACY
+
+Before picks lock:
+
+Users should only be able to see their own selections.
+
+If they click another user's bracket, show:
+
+Picks Hidden Until Lock
+
+After lock:
+
+All submitted brackets can become publicly viewable.
+
+This prevents copying.
+
+---
+
+# GROUPS
+
+Build basic private groups.
+
+Users should be able to:
+
+Create Group
+
+Fields:
+
+- Group name
+- Description optional
+
+Example:
+
+Ramsey CC
+
+Generate a short join code.
+
+Example:
+
+RAMSEY26
+
+Users can select:
+
+Join Group
+
+Then enter the join code.
+
+A group page should show:
+
+- Group name
+- Members
+- Submitted brackets
+- Group leaderboard
+
+Keep group permissions simple.
+
+No advanced commissioner tools are required yet.
+
+---
+
+# MULTIPLE BRACKETS
+
+Allow users to create more than one bracket.
+
+Each bracket has:
+
+- Unique ID
+- User owner
+- Bracket name
+- Tournament
+- Picks
+- Submission status
+- Score
+- Max possible score
+- Rank
+
+We may later impose bracket limits, but do not worry about that yet.
+
+---
+
+# DATABASE
+
+Use PostgreSQL.
+
+Use Drizzle ORM or another strong typed ORM appropriate for the Replit environment.
+
+Suggested database entities:
+
+## User
+
+- id
+- name
+- createdAt
+
+## Tournament
+
+- id
+- name
+- year
+- slug
+- status
+- lockTime
+- sourceUrl
+- lastSyncedAt
+- createdAt
+- updatedAt
+
+## Golfer
+
+- id
+- tournamentId
+- externalId optional
+- firstName
+- lastName
+- fullName
+- seed
+- ranking optional
+- college optional
+- country optional
+- photoUrl optional
+- status
+- eliminated
+- createdAt
+- updatedAt
+
+## Matchup
+
+- id
+- tournamentId
+- externalId optional
+- round
+- roundNumber
+- position
+- golfer1Id
+- golfer2Id
+- winnerId optional
+- nextMatchupId optional
+- nextSlot optional
+- matchScore optional
+- status
+- sourceUpdatedAt optional
+- createdAt
+- updatedAt
+
+## Bracket
+
+- id
+- userId
+- tournamentId
+- name
+- submitted
+- submittedAt optional
+- score
+- maxPossibleScore
+- rank optional
+- createdAt
+- updatedAt
+
+## BracketPick
+
+- id
+- bracketId
+- matchupId
+- selectedGolferId
+- round
+- pointsPossible
+- status
+- isCorrect optional
+- createdAt
+- updatedAt
+
+## Group
+
+- id
+- tournamentId
+- name
+- description optional
+- joinCode
+- createdByUserId
+- createdAt
+
+## GroupMember
+
+- id
+- groupId
+- userId
+- createdAt
+
+Use foreign keys appropriately.
+
+---
+
+# STABLE MATCHUP IDS
+
+Do not make predictions dependent on volatile external URLs.
+
+Create stable internal matchup identifiers.
+
+Examples:
+
+2026-us-am-r64-01
+
+2026-us-am-r64-02
+
+2026-us-am-r32-01
+
+2026-us-am-r16-01
+
+2026-us-am-qf-01
+
+2026-us-am-sf-01
+
+2026-us-am-final
+
+If the USGA provides an external matchup ID, store that separately.
+
+---
+
+# TOURNAMENT ROUND MODEL
+
+Use consistent normalized round values.
+
+Example:
+
+R64
+
+R32
+
+R16
+
+QF
+
+SF
+
+F
+
+Also store:
+
+roundNumber
+
+Example:
+
+1 through 6.
+
+Do not scatter round-name logic throughout components.
+
+Centralize it.
+
+---
+
+# ADMIN PANEL
+
+Route:
+
+/admin
+
+No authentication required for MVP.
+
+Include:
+
+## Tournament
+
+- Current tournament
+- Tournament status
+- Lock date/time
+- Edit lock time
+
+## USGA Data
+
+- Import bracket
+- Refresh tournament
+- Last sync time
+- Import status
+- Error messages
+
+## Matchups
+
+Display current real matches.
+
+Allow manual correction if automated data import fails.
+
+Admin should be able to:
+
+- Select actual winner
+- Mark match complete
+- Enter match score
+- Set match status
+- Reset a result if necessary
+
+Manual edits should trigger bracket rescoring.
+
+---
+
+# DATA IMPORT LOGGING
+
+Show basic import information.
+
+Example:
+
+Last Sync
+
+August 12, 2026 2:14 PM
+
+64 golfers imported
+
+32 Round of 64 matches imported
+
+6 results updated
+
+If something fails, display a useful error.
+
+Do not silently fail.
+
+---
+
+# AUTOMATIC REFRESH ARCHITECTURE
+
+Structure the code so tournament refreshes can later run automatically.
+
+If Replit supports reliable scheduled jobs easily, add a reasonable tournament refresh process.
+
+Otherwise keep the manual admin refresh for now.
+
+Do not overengineer infrastructure before the bracket works.
+
+---
+
+# COMPONENT ARCHITECTURE
+
+Create reusable components.
+
+Suggested components:
+
+TournamentHeader
+
+Bracket
+
+BracketRound
+
+MatchupCard
+
+GolferRow
+
+RoundNavigator
+
+BracketProgress
+
+ChampionCard
+
+BracketDashboardCard
+
+Leaderboard
+
+LeaderboardRow
+
+GroupCard
+
+TournamentBracket
+
+UserMenu
+
+PickStatusBadge
+
+BracketSummary
+
+AdminTournamentSync
+
+Do not put the entire app into one giant React file.
+
+---
+
+# TECH STACK
+
+Use a modern stack that runs cleanly on Replit.
+
+Preferred:
+
+- React
+- TypeScript
+- Tailwind CSS
+- Node.js
+- PostgreSQL
+- Drizzle ORM
+
+Use a clean backend architecture.
+
+REST endpoints, typed server functions, or another appropriate architecture are acceptable.
+
+Prioritize:
+
+- Stability
+- Fast UI
+- Simple deployment
+- Clean database access
+- Easy debugging
+- Reusable components
+- Easy future expansion
+
+---
+
+# RESPONSIVENESS
+
+The application must work excellently on:
+
+- iPhone
+- Android
+- Tablet
+- Laptop
+- Desktop
+
+Test common screen widths.
+
+Do not treat mobile as an afterthought.
+
+---
+
+# ACCESSIBILITY
+
+Use:
+
+- Semantic HTML
+- Accessible buttons
+- Proper labels
+- Keyboard support where practical
+- Clear focus states
+- Strong color contrast
+- Do not communicate correct/incorrect state with color alone
+
+---
+
+# EMPTY STATES
+
+Create polished empty states.
+
+Example:
+
+You haven't created a bracket yet.
+
+Think you know who's winning the U.S. Amateur?
+
+Button:
+
+Create Your First Bracket
+
+Groups:
+
+Compete with your golf group.
+
+Button:
+
+Create a Group
+
+Tournament data unavailable:
+
+Tournament data has not been imported yet.
+
+---
+
+# LOADING STATES
+
+Do not show blank pages while data loads.
+
+Use subtle skeletons or loading states.
+
+Examples:
+
+Loading bracket...
+
+Updating tournament results...
+
+Keep the app feeling polished.
+
+---
+
+# ERROR STATES
+
+Handle errors cleanly.
+
+Examples:
+
+We couldn't load the tournament bracket.
+
+Your pick could not be saved. Try again.
+
+Tournament data refresh failed.
+
+Provide retry buttons where appropriate.
+
+---
+
+# IMPORTANT DISTINCTION: PREDICTIONS VS REAL RESULTS
+
+Never mix these data types.
+
+A user prediction is immutable historical contest data once brackets lock.
+
+Actual tournament results come from USGA data.
+
+Example:
+
+Matt predicts:
+
+Golfer A beats Golfer B.
+
+Actual result:
+
+Golfer B wins.
+
+Store both.
+
+Do not overwrite Matt's prediction.
+
+The UI should then show Matt's selection as incorrect.
+
+---
+
+# BRACKET LOCKING LOGIC
+
+Before tournament lock:
+
+If a user changes an earlier selection:
+
+Clear logically invalid downstream selections.
+
+After tournament lock:
+
+Never clear historical user selections because of actual results.
+
+Instead mark them:
+
+- Correct
+- Incorrect
+- Eliminated
+- Pending
+
+This difference is important.
+
+---
+
+# MY BRACKET SUMMARY
+
+At the top of a completed bracket show:
+
+Bracket name.
+
+User.
+
+Current score.
+
+Rank.
+
+Maximum possible score.
+
+Champion pick.
+
+Example:
+
+Carlson Chalk
+
+Matt
+
+Score: 86
+
+Rank: #12
+
+Max: 150
+
+Champion: Jackson Koivun
+
+---
+
+# ROUND SUMMARIES
+
+When tournament results are active, optionally show round-level performance.
+
+Example:
+
+Round of 64
+
+24 / 32 correct
+
+24 points
+
+Round of 32
+
+10 / 16 correct
+
+20 points
+
+This helps make the experience feel like Tournament Challenge.
+
+---
+
+# DO NOT BUILD YET
+
+Do not spend significant development time on:
+
+- Real authentication
+- Passwords
+- Email verification
+- Payments
+- Entry fees
+- Gambling
+- Sponsorship dashboards
+- Advertising platform
+- Affiliate links
+- Push notifications
+- Native iOS app
+- Native Android app
+- Generic tournament builder
+- Golf club SaaS
+- Subscription billing
+- Advanced commissioner settings
+- Chat
+- Social feeds
+- Fantasy golf features beyond the bracket
+
+Those can come later.
+
+---
+
+# FUTURE-PROOFING
+
+Although this MVP focuses specifically on the U.S. Amateur, do not hard-code the entire application in a way that makes another tournament impossible.
+
+The database should support multiple tournaments eventually.
+
+However:
+
+Do not build a generic tournament management UI right now.
+
+Do not let future-proofing distract from the current U.S. Amateur experience.
+
+Primary focus:
+
+2026 U.S. Amateur Bracket Challenge
+
+---
+
+# DEVELOPMENT PRIORITIES
+
+Build in this exact order:
+
+## Priority 1
+
+Real U.S. Amateur data ingestion.
+
+Find the best structured data source behind the official USGA championship website.
+
+Import the real 64-player bracket.
+
+## Priority 2
+
+Exceptional Tournament Challenge-style bracket UX.
+
+The bracket must look and feel polished.
+
+## Priority 3
+
+Bracket propagation logic.
+
+Selections must advance correctly.
+
+Changing early picks must invalidate impossible future selections before lock.
+
+## Priority 4
+
+Temporary name-based login.
+
+## Priority 5
+
+Autosaving and saved brackets.
+
+## Priority 6
+
+Bracket submission and lock logic.
+
+## Priority 7
+
+Tournament result ingestion.
+
+## Priority 8
+
+Scoring.
+
+## Priority 9
+
+Leaderboard.
+
+## Priority 10
+
+Groups.
+
+Do not sacrifice Priority 1–5 polish for Priority 9–10.
+
+---
+
+# REQUIRED END-TO-END TEST
+
+When the initial build is complete, I should immediately be able to do this:
+
+1. Open Bracket Golf.
+2. See the 2026 U.S. Amateur Challenge.
+3. Enter:
+
+Matt
+
+4. Be logged into Matt's account.
+5. Click:
+
+Create a Bracket
+
+6. Name it:
+
+Matt's Bracket
+
+7. See the actual real U.S. Amateur Round of 64 field.
+8. Select the winner of a match.
+9. See that golfer automatically advance.
+10. Continue selecting winners.
+11. Complete all 63 picks.
+12. Select my champion.
+13. Submit the bracket.
+14. Return to the dashboard.
+15. Reopen the bracket.
+16. See every pick still saved.
+17. Refresh actual tournament results from the admin panel.
+18. See correct picks update.
+19. See incorrect picks update.
+20. See eliminated future picks.
+21. See my score update.
+22. See maximum possible score update.
+23. See the leaderboard update.
+24. See my rank.
+
+That entire flow must work.
+
+---
+
+# QUALITY BAR
+
+Before considering the first version complete, review the application like a real consumer sports product.
+
+Ask:
+
+Does this feel fun to fill out?
+
+Does the bracket feel intuitive?
+
+Does clicking a golfer feel satisfying?
+
+Does advancement happen instantly and clearly?
+
+Can I understand where each golfer advances?
+
+Can I easily recover if I change an earlier pick?
+
+Can I fill this out comfortably on my phone?
+
+Can I see my completion progress?
+
+Does the championship selection feel important?
+
+Does my completed bracket look worth sharing?
+
+Does the leaderboard feel competitive?
+
+Does the live tournament state make me want to keep checking the app?
+
+If the answer to any of these is no, improve that experience before adding unnecessary features.
+
+---
+
+# FINAL INSTRUCTION
+
+Start building the application.
+
+Do not spend the first response giving me a long architecture explanation.
+
+Inspect the official U.S. Amateur championship site and determine the best reliable source for real tournament data.
+
+Then build the product around that real data.
+
+Do not use fictional golfers as placeholders.
+
+Do not fake tournament participation numbers.
+
+Do not fake results.
+
+Build the real U.S. Amateur Tournament Challenge experience.
+
+The guiding principle for every product decision should be:
+
+What would ESPN Tournament Challenge feel like if it were built specifically for the U.S. Amateur?

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Bracket Golf"
+description = "A tournament challenge web app for the U.S. Amateur Golf Championship. Users fill out a 64-player single-elimination bracket, predict match winners, and compete on a leaderboard — styled like ESPN Tournament Challenge but built specifically for U.S. Amateur match play."
+version = "1.0.0"
+id = "artifacts/bracket-golf"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25557
+
+[services.development]
+run = "pnpm --filter @workspace/bracket-golf run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bracket-golf", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/bracket-golf/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25557"
+BASE_PATH = "/"
