@@ -15,6 +15,7 @@ export const bracketsTable = pgTable("brackets", {
   score: integer("score").notNull().default(0),
   maxPossibleScore: integer("max_possible_score").notNull().default(0),
   rank: integer("rank"),
+  startRound: text("start_round").notNull().default("R64"),
   championGolferId: text("champion_golfer_id").references(() => golfersTable.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

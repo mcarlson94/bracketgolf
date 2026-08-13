@@ -18,6 +18,18 @@ function requireAuth(req: Parameters<Parameters<typeof router.get>[1]>[0], res: 
   return userId;
 }
 
+// Total picks by starting round
+function getTotalPicks(startRound: string) {
+  if (startRound === "R32") return 31; // 16+8+4+2+1
+  return TOTAL_PICKS; // 63
+}
+
+// Max possible score by starting round
+function getMaxScore(startRound: string) {
+  if (startRound === "R32") return 160; // 16*2+8*4+4*8+2*16+1*32
+  return 192; // 32*1+16*2+8*4+4*8+2*16+1*32
+}
+
 // Serialize a bracket record with computed fields
 async function serializeBracket(bracket: typeof bracketsTable.$inferSelect) {
   const picks = await db
@@ -32,17 +44,19 @@ async function serializeBracket(bracket: typeof bracketsTable.$inferSelect) {
     championName = champ?.fullName ?? null;
   }
 
+  const startRound = bracket.startRound ?? "R64";
   return {
     id: bracket.id,
     userId: bracket.userId,
     tournamentId: bracket.tournamentId,
     name: bracket.name,
+    startRound,
     submitted: bracket.submitted,
     submittedAt: bracket.submittedAt?.toISOString() ?? null,
     score: bracket.score,
     maxPossibleScore: bracket.maxPossibleScore,
     rank: bracket.rank ?? null,
-    totalPicks: TOTAL_PICKS,
+    totalPicks: getTotalPicks(startRound),
     completedPicks: picks.length,
     championGolferId: bracket.championGolferId ?? null,
     championName,
@@ -82,6 +96,9 @@ router.post("/brackets", async (req, res): Promise<void> => {
     return;
   }
 
+  const startRound = parsed.data.startRound ?? "R64";
+  const maxScore = getMaxScore(startRound);
+
   const [bracket] = await db
     .insert(bracketsTable)
     .values({
@@ -89,17 +106,14 @@ router.post("/brackets", async (req, res): Promise<void> => {
       userId,
       tournamentId: tournament.id,
       name: parsed.data.name,
+      startRound,
       submitted: false,
       score: 0,
-      maxPossibleScore: 127, // Max possible: 32*1 + 16*2 + 8*4 + 4*8 + 2*16 + 1*32 = 32+32+32+32+32+32 = 192... actually 1+2+4+8+16+32 * (matches per round)
-      // Actually: 32*1 + 16*2 + 8*4 + 4*8 + 2*16 + 1*32 = 32+32+32+32+32+32 = 192
+      maxPossibleScore: maxScore,
     })
     .returning();
 
-  // Set initial max possible score
-  await db.update(bracketsTable).set({ maxPossibleScore: 192 }).where(eq(bracketsTable.id, bracket.id));
-
-  const result = await serializeBracket({ ...bracket, maxPossibleScore: 192 });
+  const result = await serializeBracket({ ...bracket, maxPossibleScore: maxScore });
   res.status(201).json(result);
 });
 
@@ -135,17 +149,19 @@ router.get("/brackets/:bracketId", async (req, res): Promise<void> => {
     championName = champ?.fullName ?? null;
   }
 
+  const startRound = bracket.startRound ?? "R64";
   res.json({
     id: bracket.id,
     userId: bracket.userId,
     tournamentId: bracket.tournamentId,
     name: bracket.name,
+    startRound,
     submitted: bracket.submitted,
     submittedAt: bracket.submittedAt?.toISOString() ?? null,
     score: bracket.score,
     maxPossibleScore: bracket.maxPossibleScore,
     rank: bracket.rank ?? null,
-    totalPicks: TOTAL_PICKS,
+    totalPicks: getTotalPicks(startRound),
     completedPicks: picks.length,
     championGolferId: bracket.championGolferId ?? null,
     championName,

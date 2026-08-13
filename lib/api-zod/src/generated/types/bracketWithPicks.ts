@@ -6,12 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BracketPick } from './bracketPick';
+import type { BracketWithPicksStartRound } from './bracketWithPicksStartRound';
 
 export interface BracketWithPicks {
   id: string;
   userId: string;
   tournamentId: string;
   name: string;
+  startRound: BracketWithPicksStartRound;
   submitted: boolean;
   /** @nullable */
   submittedAt?: string | null;

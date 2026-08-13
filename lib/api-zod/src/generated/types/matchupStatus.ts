@@ -13,4 +13,5 @@ export const MatchupStatus = {
   scheduled: 'scheduled',
   live: 'live',
   completed: 'completed',
+  in_progress: 'in_progress',
 } as const;

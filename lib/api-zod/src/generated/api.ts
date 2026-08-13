@@ -81,7 +81,7 @@ export const GetGolfersResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string(),
   "seed": zod.number(),
-  "ranking": zod.number().nullish(),
+  "ranking": zod.number().int().nullish(),
   "college": zod.string().nullish(),
   "country": zod.string().nullish(),
   "photoUrl": zod.string().nullish(),
@@ -107,9 +107,10 @@ export const GetMatchupsResponseItem = zod.object({
   "golfer2Id": zod.string().nullish(),
   "winnerId": zod.string().nullish(),
   "nextMatchupId": zod.string().nullish(),
-  "nextSlot": zod.number().nullish(),
+  "nextSlot": zod.number().int().nullish(),
   "matchScore": zod.string().nullish(),
-  "status": zod.enum(['scheduled', 'live', 'completed']),
+  "teeTime": zod.string().nullish(),
+  "status": zod.enum(['scheduled', 'live', 'completed', 'in_progress']),
   "sourceUpdatedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -121,7 +122,7 @@ export const GetMatchupsResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string(),
   "seed": zod.number(),
-  "ranking": zod.number().nullish(),
+  "ranking": zod.number().int().nullish(),
   "college": zod.string().nullish(),
   "country": zod.string().nullish(),
   "photoUrl": zod.string().nullish(),
@@ -138,7 +139,7 @@ export const GetMatchupsResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string(),
   "seed": zod.number(),
-  "ranking": zod.number().nullish(),
+  "ranking": zod.number().int().nullish(),
   "college": zod.string().nullish(),
   "country": zod.string().nullish(),
   "photoUrl": zod.string().nullish(),
@@ -155,7 +156,7 @@ export const GetMatchupsResponseItem = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string(),
   "seed": zod.number(),
-  "ranking": zod.number().nullish(),
+  "ranking": zod.number().int().nullish(),
   "college": zod.string().nullish(),
   "country": zod.string().nullish(),
   "photoUrl": zod.string().nullish(),
@@ -176,11 +177,12 @@ export const GetBracketsResponseItem = zod.object({
   "userId": zod.string(),
   "tournamentId": zod.string(),
   "name": zod.string(),
+  "startRound": zod.enum(['R64', 'R32']),
   "submitted": zod.boolean(),
   "submittedAt": zod.string().nullish(),
   "score": zod.number(),
   "maxPossibleScore": zod.number(),
-  "rank": zod.number().nullish(),
+  "rank": zod.number().int().nullish(),
   "totalPicks": zod.number(),
   "completedPicks": zod.number(),
   "championGolferId": zod.string().nullish(),
@@ -196,10 +198,11 @@ export const GetBracketsResponse = zod.array(GetBracketsResponseItem)
  */
 export const createBracketBodyNameMax = 200;
 
-
+export const createBracketBodyStartRoundDefault = `R64`;
 
 export const CreateBracketBody = zod.object({
-  "name": zod.string().min(1).max(createBracketBodyNameMax)
+  "name": zod.string().min(1).max(createBracketBodyNameMax),
+  "startRound": zod.enum(['R64', 'R32']).default(createBracketBodyStartRoundDefault)
 })
 
 export const CreateBracketResponse = zod.object({
@@ -207,11 +210,12 @@ export const CreateBracketResponse = zod.object({
   "userId": zod.string(),
   "tournamentId": zod.string(),
   "name": zod.string(),
+  "startRound": zod.enum(['R64', 'R32']),
   "submitted": zod.boolean(),
   "submittedAt": zod.string().nullish(),
   "score": zod.number(),
   "maxPossibleScore": zod.number(),
-  "rank": zod.number().nullish(),
+  "rank": zod.number().int().nullish(),
   "totalPicks": zod.number(),
   "completedPicks": zod.number(),
   "championGolferId": zod.string().nullish(),
@@ -233,11 +237,12 @@ export const GetBracketResponse = zod.object({
   "userId": zod.string(),
   "tournamentId": zod.string(),
   "name": zod.string(),
+  "startRound": zod.enum(['R64', 'R32']),
   "submitted": zod.boolean(),
   "submittedAt": zod.string().nullish(),
   "score": zod.number(),
   "maxPossibleScore": zod.number(),
-  "rank": zod.number().nullish(),
+  "rank": zod.number().int().nullish(),
   "totalPicks": zod.number(),
   "completedPicks": zod.number(),
   "championGolferId": zod.string().nullish(),
@@ -282,11 +287,12 @@ export const SubmitBracketResponse = zod.object({
   "userId": zod.string(),
   "tournamentId": zod.string(),
   "name": zod.string(),
+  "startRound": zod.enum(['R64', 'R32']),
   "submitted": zod.boolean(),
   "submittedAt": zod.string().nullish(),
   "score": zod.number(),
   "maxPossibleScore": zod.number(),
-  "rank": zod.number().nullish(),
+  "rank": zod.number().int().nullish(),
   "totalPicks": zod.number(),
   "completedPicks": zod.number(),
   "championGolferId": zod.string().nullish(),
@@ -367,7 +373,7 @@ export const GetLeaderboardResponse = zod.object({
   "championName": zod.string().nullish()
 })),
   "total": zod.number(),
-  "currentUserRank": zod.number().nullable()
+  "currentUserRank": zod.number().int().nullable()
 })
 
 
@@ -474,9 +480,9 @@ export const AdminImportBody = zod.object({
 export const AdminImportResponse = zod.object({
   "success": zod.boolean(),
   "message": zod.string(),
-  "golfersImported": zod.number().nullish(),
-  "matchupsImported": zod.number().nullish(),
-  "resultsUpdated": zod.number().nullish(),
+  "golfersImported": zod.number().int().nullish(),
+  "matchupsImported": zod.number().int().nullish(),
+  "resultsUpdated": zod.number().int().nullish(),
   "errors": zod.array(zod.string()).optional(),
   "timestamp": zod.string().optional()
 })
@@ -528,9 +534,10 @@ export const AdminUpdateMatchupResponse = zod.object({
   "golfer2Id": zod.string().nullish(),
   "winnerId": zod.string().nullish(),
   "nextMatchupId": zod.string().nullish(),
-  "nextSlot": zod.number().nullish(),
+  "nextSlot": zod.number().int().nullish(),
   "matchScore": zod.string().nullish(),
-  "status": zod.enum(['scheduled', 'live', 'completed']),
+  "teeTime": zod.string().nullish(),
+  "status": zod.enum(['scheduled', 'live', 'completed', 'in_progress']),
   "sourceUpdatedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -542,7 +549,7 @@ export const AdminUpdateMatchupResponse = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string(),
   "seed": zod.number(),
-  "ranking": zod.number().nullish(),
+  "ranking": zod.number().int().nullish(),
   "college": zod.string().nullish(),
   "country": zod.string().nullish(),
   "photoUrl": zod.string().nullish(),
@@ -559,7 +566,7 @@ export const AdminUpdateMatchupResponse = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string(),
   "seed": zod.number(),
-  "ranking": zod.number().nullish(),
+  "ranking": zod.number().int().nullish(),
   "college": zod.string().nullish(),
   "country": zod.string().nullish(),
   "photoUrl": zod.string().nullish(),
@@ -576,7 +583,7 @@ export const AdminUpdateMatchupResponse = zod.object({
   "lastName": zod.string().nullish(),
   "fullName": zod.string(),
   "seed": zod.number(),
-  "ranking": zod.number().nullish(),
+  "ranking": zod.number().int().nullish(),
   "college": zod.string().nullish(),
   "country": zod.string().nullish(),
   "photoUrl": zod.string().nullish(),

@@ -5,12 +5,14 @@
  * Bracket Golf API - U.S. Amateur Bracket Challenge
  * OpenAPI spec version: 0.1.0
  */
+import type { BracketStartRound } from './bracketStartRound';
 
 export interface Bracket {
   id: string;
   userId: string;
   tournamentId: string;
   name: string;
+  startRound: BracketStartRound;
   submitted: boolean;
   /** @nullable */
   submittedAt?: string | null;

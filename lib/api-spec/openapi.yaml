@@ -580,9 +580,11 @@ components:
           type: ["integer", "null"]
         matchScore:
           type: ["string", "null"]
+        teeTime:
+          type: ["string", "null"]
         status:
           type: string
-          enum: [scheduled, live, completed]
+          enum: [scheduled, live, completed, in_progress]
         sourceUpdatedAt:
           type: ["string", "null"]
         createdAt:
@@ -616,10 +618,14 @@ components:
           type: string
           minLength: 1
           maxLength: 200
+        startRound:
+          type: string
+          enum: [R64, R32]
+          default: R64
 
     Bracket:
       type: object
-      required: [id, userId, tournamentId, name, submitted, score, maxPossibleScore, totalPicks, completedPicks, createdAt, updatedAt]
+      required: [id, userId, tournamentId, name, submitted, score, maxPossibleScore, totalPicks, completedPicks, startRound, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -629,6 +635,9 @@ components:
           type: string
         name:
           type: string
+        startRound:
+          type: string
+          enum: [R64, R32]
         submitted:
           type: boolean
         submittedAt:
@@ -654,7 +663,7 @@ components:
 
     BracketWithPicks:
       type: object
-      required: [id, userId, tournamentId, name, submitted, score, maxPossibleScore, totalPicks, completedPicks, picks, createdAt, updatedAt]
+      required: [id, userId, tournamentId, name, submitted, score, maxPossibleScore, totalPicks, completedPicks, startRound, picks, createdAt, updatedAt]
       properties:
         id:
           type: string
@@ -664,6 +673,9 @@ components:
           type: string
         name:
           type: string
+        startRound:
+          type: string
+          enum: [R64, R32]
         submitted:
           type: boolean
         submittedAt:

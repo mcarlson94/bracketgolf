@@ -11,14 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Plus, Users, ArrowRight, Trash2 } from "lucide-react";
+import { Trophy, Plus, Users, ArrowRight, Trash2, Flag, ChevronRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
-  const [isCreating, setIsCreating] = useState(false);
+  const [isCreating, setIsCreating] = useState<"R64" | "R32" | null>(null);
 
   const { data: tournament, isLoading: loadingTourney } = useGetTournament();
   const { data: brackets, isLoading: loadingBrackets } = useGetBrackets();
@@ -27,10 +27,14 @@ export default function Dashboard() {
   const createBracketMutation = useCreateBracket();
   const deleteBracketMutation = useDeleteBracket();
 
-  const handleCreateBracket = () => {
-    setIsCreating(true);
+  const handleCreateBracket = (startRound: "R64" | "R32") => {
+    setIsCreating(startRound);
+    const num = brackets ? brackets.length + 1 : 1;
+    const name = startRound === "R32"
+      ? `R32 Bracket ${num}`
+      : `My Bracket ${num}`;
     createBracketMutation.mutate(
-      { data: { name: `My Bracket ${brackets ? brackets.length + 1 : 1}` } },
+      { data: { name, startRound } },
       {
         onSuccess: (newBracket) => {
           queryClient.invalidateQueries({ queryKey: ["/api/brackets"] });
@@ -42,7 +46,7 @@ export default function Dashboard() {
             description: "Failed to create bracket. Tournament might not be ready.",
             variant: "destructive"
           });
-          setIsCreating(false);
+          setIsCreating(null);
         }
       }
     );
@@ -83,15 +87,27 @@ export default function Dashboard() {
             Think you know who will win the Havemeyer Trophy? Fill out your bracket and compete for glory.
           </p>
           {!isLocked && (
-            <Button 
-              size="lg" 
-              onClick={handleCreateBracket} 
-              disabled={isCreating || !tournament || tournament.status === 'upcoming'}
-              className="font-semibold px-8 h-12 shadow-lg"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              {isCreating ? "Creating..." : "Create a Bracket"}
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                onClick={() => handleCreateBracket("R64")}
+                disabled={!!isCreating || !tournament || tournament.status === 'upcoming'}
+                className="font-semibold px-6 h-12 shadow-lg"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                {isCreating === "R64" ? "Creating..." : "Full Bracket (R64)"}
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => handleCreateBracket("R32")}
+                disabled={!!isCreating || !tournament || tournament.status === 'upcoming'}
+                className="font-semibold px-6 h-12 border-white/30 text-white hover:bg-white/10 shadow-lg"
+              >
+                <Flag className="w-5 h-5 mr-2" />
+                {isCreating === "R32" ? "Creating..." : "Round of 32 Bracket"}
+              </Button>
+            </div>
           )}
           {tournament?.status === 'upcoming' && (
             <p className="mt-4 text-yellow-400 font-medium text-sm">
@@ -164,10 +180,15 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between gap-6">
                       <div className="flex-1">
                         <div className="flex justify-between text-xs mb-1">
-                          <span className="font-medium">{bracket.completedPicks}/63 Picks Made</span>
-                          <span className="text-muted-foreground">{Math.round((bracket.completedPicks/63)*100)}%</span>
+                          <span className="font-medium flex items-center gap-1.5">
+                              {bracket.startRound === "R32" && (
+                                <span className="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm uppercase tracking-wide">R32</span>
+                              )}
+                              {bracket.completedPicks}/{bracket.totalPicks} Picks
+                            </span>
+                          <span className="text-muted-foreground">{Math.round((bracket.completedPicks/bracket.totalPicks)*100)}%</span>
                         </div>
-                        <Progress value={(bracket.completedPicks/63)*100} className="h-2" />
+                        <Progress value={(bracket.completedPicks/bracket.totalPicks)*100} className="h-2" />
                       </div>
                       <Link href={`/brackets/${bracket.id}`}>
                         <Button variant={isLocked ? "outline" : "default"} size="sm">

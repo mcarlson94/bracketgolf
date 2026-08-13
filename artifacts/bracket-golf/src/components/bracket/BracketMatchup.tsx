@@ -5,7 +5,8 @@ import {
   BracketPickStatus
 } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
-import { Check, X } from "lucide-react";
+import { Check, X, Clock } from "lucide-react";
+import { format } from "date-fns";
 
 interface BracketMatchupProps {
   matchup: Matchup;
@@ -112,11 +113,25 @@ export function BracketMatchupCard({
     );
   };
 
+  // Tee time — only show for scheduled/in-progress matches
+  const teeTimeRaw = (matchup as any).teeTime as string | null | undefined;
+  const isScheduled = matchup.status === "scheduled" || matchup.status === "in_progress";
+  let teeTimeLabel: string | null = null;
+  if (teeTimeRaw && isScheduled) {
+    try { teeTimeLabel = format(new Date(teeTimeRaw), "h:mm a"); } catch { /* ignore */ }
+  }
+
   return (
     <div className={cn(
       "flex flex-col border border-border bg-card shadow-xs overflow-hidden transition-opacity",
       isLoading && "opacity-50 pointer-events-none"
     )}>
+      {teeTimeLabel && (
+        <div className="flex items-center gap-1 px-3 py-1 bg-blue-50 border-b border-blue-100 text-[10px] font-semibold text-blue-700">
+          <Clock className="w-3 h-3" />
+          {teeTimeLabel}
+        </div>
+      )}
       <GolferRow golfer={g1} isProjected={isProjected1} />
       <GolferRow golfer={g2} isProjected={isProjected2} isBottom />
     </div>

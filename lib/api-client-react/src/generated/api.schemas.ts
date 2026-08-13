@@ -113,6 +113,7 @@ export const MatchupStatus = {
   scheduled: 'scheduled',
   live: 'live',
   completed: 'completed',
+  in_progress: 'in_progress',
 } as const;
 
 export interface Matchup {
@@ -135,6 +136,8 @@ export interface Matchup {
   nextSlot?: number | null;
   /** @nullable */
   matchScore?: string | null;
+  /** @nullable */
+  teeTime?: string | null;
   status: MatchupStatus;
   /** @nullable */
   sourceUpdatedAt?: string | null;
@@ -162,19 +165,37 @@ export interface MatchupUpdate {
   status?: MatchupUpdateStatus;
 }
 
+export type BracketInputStartRound = typeof BracketInputStartRound[keyof typeof BracketInputStartRound];
+
+
+export const BracketInputStartRound = {
+  R64: 'R64',
+  R32: 'R32',
+} as const;
+
 export interface BracketInput {
   /**
      * @minLength 1
      * @maxLength 200
      */
   name: string;
+  startRound?: BracketInputStartRound;
 }
+
+export type BracketStartRound = typeof BracketStartRound[keyof typeof BracketStartRound];
+
+
+export const BracketStartRound = {
+  R64: 'R64',
+  R32: 'R32',
+} as const;
 
 export interface Bracket {
   id: string;
   userId: string;
   tournamentId: string;
   name: string;
+  startRound: BracketStartRound;
   submitted: boolean;
   /** @nullable */
   submittedAt?: string | null;
@@ -191,6 +212,14 @@ export interface Bracket {
   createdAt: string;
   updatedAt: string;
 }
+
+export type BracketWithPicksStartRound = typeof BracketWithPicksStartRound[keyof typeof BracketWithPicksStartRound];
+
+
+export const BracketWithPicksStartRound = {
+  R64: 'R64',
+  R32: 'R32',
+} as const;
 
 export type BracketPickRound = typeof BracketPickRound[keyof typeof BracketPickRound];
 
@@ -234,6 +263,7 @@ export interface BracketWithPicks {
   userId: string;
   tournamentId: string;
   name: string;
+  startRound: BracketWithPicksStartRound;
   submitted: boolean;
   /** @nullable */
   submittedAt?: string | null;

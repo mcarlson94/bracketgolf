@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import {
   useGetBracket,
@@ -11,6 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import { getGetBracketQueryKey } from "@workspace/api-client-react";
 import { BracketMatchupCard, ChampionshipCard } from "@/components/bracket/BracketMatchup";
+import { ResultMatchupCard } from "@/components/bracket/ResultMatchupCard";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
@@ -33,6 +34,7 @@ export default function BracketViewer() {
 
   const [activeTab, setActiveTab] = useState<MatchupRound>(MatchupRound.R64);
   const [pendingMatchups, setPendingMatchups] = useState<Record<string, boolean>>({});
+  const [tabInitialized, setTabInitialized] = useState(false);
 
   const { data: tournament, isLoading: loadingTournament } = useGetTournament();
   const { data: bracketData, isLoading: loadingBracket, error: bracketError } =
@@ -45,6 +47,16 @@ export default function BracketViewer() {
   const isLocked = tournament?.status === "locked" || tournament?.status === "completed";
   const bracket = bracketData;
   const picks = bracketData?.picks || [];
+
+  // Initialize tab to R32 for R32 brackets (once bracket data loads)
+  useEffect(() => {
+    if (bracket && !tabInitialized) {
+      if ((bracket as any).startRound === "R32") {
+        setActiveTab(MatchupRound.R32);
+      }
+      setTabInitialized(true);
+    }
+  }, [bracket, tabInitialized]);
 
   const handlePick = useCallback(
     (matchupId: string, golferId: string) => {
@@ -221,7 +233,9 @@ export default function BracketViewer() {
     );
   }
 
-  const isComplete = bracket.completedPicks === 63;
+  const startRound = (bracket as any).startRound ?? "R64";
+  const isR32Bracket = startRound === "R32";
+  const isComplete = bracket.completedPicks >= bracket.totalPicks;
   const isSaving = Object.keys(pendingMatchups).length > 0;
 
   const finalMatchup = matchupsByRound[MatchupRound.F]?.[0];
@@ -280,9 +294,9 @@ export default function BracketViewer() {
                       <CheckCircle2 className="w-3 h-3 mr-1" /> Saved
                     </span>
                   )}
-                  <span className="text-muted-foreground">{bracket.completedPicks}/63</span>
+                  <span className="text-muted-foreground">{bracket.completedPicks}/{bracket.totalPicks}</span>
                 </div>
-                <Progress value={(bracket.completedPicks / 63) * 100} className="h-1 w-40" />
+                <Progress value={(bracket.completedPicks / bracket.totalPicks) * 100} className="h-1 w-40" />
               </div>
 
               {!isLocked && !bracket.submitted && isComplete && (
@@ -350,6 +364,16 @@ export default function BracketViewer() {
               <div className="text-center py-16 px-6 border border-dashed border-border bg-white max-w-sm mx-auto">
                 <p className="font-semibold text-sm mb-1">No matchups yet</p>
                 <p className="text-xs text-muted-foreground">This round hasn't been drawn yet.</p>
+              </div>
+            ) : isR32Bracket && activeTab === MatchupRound.R64 ? (
+              /* R32 bracket: show R64 as read-only results */
+              <div className="space-y-2 mb-4 max-w-sm mx-auto">
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest mb-3">
+                  Round of 64 Results
+                </p>
+                {currentRoundMatchups.map((matchup) => (
+                  <ResultMatchupCard key={matchup.id} matchup={matchup} />
+                ))}
               </div>
             ) : (
               <div className="grid gap-3 max-w-sm mx-auto">
@@ -471,14 +495,17 @@ export default function BracketViewer() {
                 const roundMatchups = matchupsByRound[round] ?? [];
                 const half = Math.ceil(roundMatchups.length / 2);
                 const leftMatchups = roundMatchups.slice(0, half);
+                const isResultOnly = isR32Bracket && round === MatchupRound.R64;
                 return (
                   <div key={`left-${round}`} className="flex flex-col w-52">
-                    <RoundColumnHeader round={round} />
+                    <RoundColumnHeader round={round} isResultOnly={isResultOnly} />
                     <div
                       className="flex flex-col flex-1 justify-around gap-3"
                       style={{ minHeight: `${Math.max(leftMatchups.length, 1) * 80}px` }}
                     >
-                      {leftMatchups.map((matchup) => (
+                      {leftMatchups.map((matchup) => isResultOnly ? (
+                        <ResultMatchupCard key={matchup.id} matchup={matchup} />
+                      ) : (
                         <BracketMatchupCard
                           key={matchup.id}
                           matchup={matchup}
@@ -527,14 +554,17 @@ export default function BracketViewer() {
                 const roundMatchups = matchupsByRound[round] ?? [];
                 const half = Math.ceil(roundMatchups.length / 2);
                 const rightMatchups = roundMatchups.slice(half);
+                const isResultOnly = isR32Bracket && round === MatchupRound.R64;
                 return (
                   <div key={`right-${round}`} className="flex flex-col w-52">
-                    <RoundColumnHeader round={round} />
+                    <RoundColumnHeader round={round} isResultOnly={isResultOnly} />
                     <div
                       className="flex flex-col flex-1 justify-around gap-3"
                       style={{ minHeight: `${Math.max(rightMatchups.length, 1) * 80}px` }}
                     >
-                      {rightMatchups.map((matchup) => (
+                      {rightMatchups.map((matchup) => isResultOnly ? (
+                        <ResultMatchupCard key={matchup.id} matchup={matchup} />
+                      ) : (
                         <BracketMatchupCard
                           key={matchup.id}
                           matchup={matchup}
@@ -558,12 +588,17 @@ export default function BracketViewer() {
   );
 }
 
-function RoundColumnHeader({ round }: { round: MatchupRound }) {
+function RoundColumnHeader({ round, isResultOnly }: { round: MatchupRound; isResultOnly?: boolean }) {
   return (
     <div className="text-center mb-4 pb-2 border-b border-border sticky top-0 bg-gray-50 z-10 py-2">
       <span className="text-[10px] font-semibold tracking-widest uppercase text-muted-foreground">
         {ROUND_DISPLAY_NAMES[round]}
       </span>
+      {isResultOnly && (
+        <span className="ml-2 text-[9px] font-semibold bg-muted text-muted-foreground px-1.5 py-0.5 rounded uppercase tracking-wide">
+          Results
+        </span>
+      )}
     </div>
   );
 }

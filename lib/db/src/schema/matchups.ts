@@ -17,7 +17,8 @@ export const matchupsTable = pgTable("matchups", {
   nextMatchupId: text("next_matchup_id"), // no FK to self to avoid circular dependency issues
   nextSlot: integer("next_slot"), // 1 or 2 (which slot in the next matchup)
   matchScore: text("match_score"), // e.g. "3 & 2", "1 UP"
-  status: text("status").notNull().default("scheduled"), // scheduled | live | completed
+  teeTime: timestamp("tee_time", { withTimezone: true }),
+  status: text("status").notNull().default("scheduled"), // scheduled | live | completed | in_progress
   sourceUpdatedAt: timestamp("source_updated_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

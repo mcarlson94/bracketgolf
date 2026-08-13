@@ -63,6 +63,7 @@ interface RawMatchup {
   winnerSeed?: number;
   matchScore?: string;
   status: string;
+  teeTime?: string;
 }
 
 interface ImportLog {
@@ -179,6 +180,8 @@ function parseUSGAScoringResponse(data: Record<string, unknown>): {
           ? "in_progress"
           : "scheduled";
 
+      const teeTimeRaw = String(m.teeTime || "");
+
       matchups.push({
         externalId: String(m.identifier || ""),
         round: roundName,
@@ -189,6 +192,7 @@ function parseUSGAScoringResponse(data: Record<string, unknown>): {
         winnerSeed,
         matchScore: standing || undefined,
         status,
+        teeTime: teeTimeRaw || undefined,
       });
     });
   });
@@ -333,15 +337,19 @@ export async function importUSGAData(action: "import" | "refresh"): Promise<Impo
         nextMatchupId,
         nextSlot,
         matchScore: m.matchScore || null,
+        teeTime: m.teeTime ? new Date(m.teeTime) : null,
         status: winnerId ? "completed" : m.status,
         sourceUpdatedAt: new Date(),
       } as InsertMatchup);
       log.matchupsImported++;
     } else {
       // Only update results — never touch non-result fields
+      const newTeeTime = m.teeTime ? new Date(m.teeTime).toISOString() : null;
+      const existingTeeTime = existing[0].teeTime ? existing[0].teeTime.toISOString() : null;
       const changed =
         winnerId !== existing[0].winnerId ||
         m.matchScore !== existing[0].matchScore ||
+        newTeeTime !== existingTeeTime ||
         (golfer1Id && golfer1Id !== existing[0].golfer1Id) ||
         (golfer2Id && golfer2Id !== existing[0].golfer2Id);
 
@@ -353,6 +361,7 @@ export async function importUSGAData(action: "import" | "refresh"): Promise<Impo
             golfer2Id: golfer2Id || existing[0].golfer2Id,
             winnerId: winnerId || existing[0].winnerId,
             matchScore: m.matchScore || existing[0].matchScore,
+            teeTime: m.teeTime ? new Date(m.teeTime) : existing[0].teeTime,
             status: winnerId ? "completed" : m.status !== "scheduled" ? m.status : existing[0].status,
             sourceUpdatedAt: new Date(),
           })

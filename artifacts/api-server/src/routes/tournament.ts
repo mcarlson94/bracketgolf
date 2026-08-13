@@ -133,6 +133,7 @@ router.get("/tournament/matchups", async (_req, res): Promise<void> => {
       nextMatchupId: m.nextMatchupId ?? null,
       nextSlot: m.nextSlot ?? null,
       matchScore: m.matchScore ?? null,
+      teeTime: m.teeTime?.toISOString() ?? null,
       status: m.status,
       sourceUpdatedAt: m.sourceUpdatedAt?.toISOString() ?? null,
       createdAt: m.createdAt.toISOString(),

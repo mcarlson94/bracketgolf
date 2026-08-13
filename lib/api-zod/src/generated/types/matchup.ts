@@ -29,6 +29,8 @@ export interface Matchup {
   nextSlot?: number | null;
   /** @nullable */
   matchScore?: string | null;
+  /** @nullable */
+  teeTime?: string | null;
   status: MatchupStatus;
   /** @nullable */
   sourceUpdatedAt?: string | null;

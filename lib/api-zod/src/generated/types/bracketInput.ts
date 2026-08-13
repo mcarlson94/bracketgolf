@@ -5,6 +5,7 @@
  * Bracket Golf API - U.S. Amateur Bracket Challenge
  * OpenAPI spec version: 0.1.0
  */
+import type { BracketInputStartRound } from './bracketInputStartRound';
 
 export interface BracketInput {
   /**
@@ -12,4 +13,5 @@ export interface BracketInput {
      * @maxLength 200
      */
   name: string;
+  startRound?: BracketInputStartRound;
 }
