@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, bracketsTable, bracketPicksTable, tournamentsTable, matchupsTable, golfersTable } from "@workspace/db";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { CreateBracketBody, GetBracketParams, DeleteBracketParams, SubmitBracketParams, SavePickBody, SavePickParams } from "@workspace/api-zod";
 import { getSessionUserId } from "../lib/session";
 import { ROUND_POINTS, TOTAL_PICKS } from "../lib/scoring";
@@ -308,10 +308,25 @@ router.put("/brackets/:bracketId/picks", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check if golfer is actually in this matchup
-  if (matchup.golfer1Id !== selectedGolferId && matchup.golfer2Id !== selectedGolferId) {
-    res.status(400).json({ error: "Golfer is not in this matchup" });
-    return;
+  // Check if golfer is actually in this matchup.
+  // For future-round placeholder matchups (golfers not yet determined), both
+  // golferIds are null — in that case just verify the golfer exists in this tournament.
+  const isPlaceholderMatchup = matchup.golfer1Id === null && matchup.golfer2Id === null;
+  if (!isPlaceholderMatchup) {
+    if (matchup.golfer1Id !== selectedGolferId && matchup.golfer2Id !== selectedGolferId) {
+      res.status(400).json({ error: "Golfer is not in this matchup" });
+      return;
+    }
+  } else {
+    // Verify golfer is a real participant in this tournament
+    const [golfer] = await db
+      .select({ id: golfersTable.id })
+      .from(golfersTable)
+      .where(and(eq(golfersTable.id, selectedGolferId), eq(golfersTable.tournamentId, bracket.tournamentId)));
+    if (!golfer) {
+      res.status(400).json({ error: "Golfer is not in this tournament" });
+      return;
+    }
   }
 
   // Get all matchups for propagation logic
