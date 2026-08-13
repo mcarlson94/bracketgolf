@@ -21,9 +21,9 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [defaultRound, setDefaultRound] = useState<"R64" | "R32">("R64");
 
-  const { data: tournament, isLoading: loadingTourney } = useGetTournament();
-  const { data: brackets, isLoading: loadingBrackets } = useGetBrackets();
-  const { data: groups, isLoading: loadingGroups } = useGetGroups();
+  const { data: tournament } = useGetTournament();
+  const { data: brackets, isLoading: loadingBrackets, isError: bracketsError } = useGetBrackets();
+  const { data: groups, isLoading: loadingGroups, isError: groupsError } = useGetGroups();
 
   const deleteBracketMutation = useDeleteBracket();
 
@@ -114,7 +114,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-2xl font-bold font-heading text-foreground">My Brackets</h2>
 
-          {loadingBrackets ? (
+          {loadingBrackets && !bracketsError ? (
             <div className="space-y-4">
               {[1, 2].map((i) => (
                 <Card key={i} className="animate-pulse h-40 bg-gray-100" />

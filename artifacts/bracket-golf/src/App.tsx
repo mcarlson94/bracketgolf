@@ -7,6 +7,7 @@ import NotFound from '@/pages/not-found';
 import {
   Route,
   Switch,
+  useLocation,
   Router as WouterRouter,
 } from 'wouter';
 
