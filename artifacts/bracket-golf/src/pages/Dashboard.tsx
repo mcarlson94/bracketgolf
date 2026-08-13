@@ -99,10 +99,9 @@ export default function Dashboard() {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
                 onClick={() => handleCreateBracket("R32")}
                 disabled={!!isCreating || !tournament || tournament.status === 'upcoming'}
-                className="font-semibold px-6 h-12 border-white/30 text-white hover:bg-white/10 shadow-lg"
+                className="font-semibold px-6 h-12 shadow-lg bg-accent hover:bg-accent/90 text-accent-foreground border-0"
               >
                 <Flag className="w-5 h-5 mr-2" />
                 {isCreating === "R32" ? "Creating..." : "Round of 32 Bracket"}
