@@ -67,11 +67,6 @@ export default function Home() {
                     {isLocked ? "View Bracket" : "Make Your Picks"}
                   </Button>
                 </Link>
-                <Link href="/leaderboard">
-                  <Button size="lg" variant="outline" className="h-11 px-7 font-heading font-bold text-base tracking-wide uppercase border-white/20 text-white hover:bg-white/10 rounded">
-                    Leaderboard
-                  </Button>
-                </Link>
               </div>
             </div>
           </div>
