@@ -98,7 +98,7 @@ export default function BracketViewer() {
   );
 
   const handleSubmit = () => {
-    if (!bracket || bracket.completedPicks < 63) return;
+    if (!bracket || bracket.completedPicks < bracket.totalPicks) return;
     submitBracketMutation.mutate(
       { bracketId },
       {
@@ -460,10 +460,10 @@ export default function BracketViewer() {
             <div className="px-4 py-2.5 flex items-center gap-3">
               <div className="flex-1">
                 <div className="flex justify-between text-[10px] font-medium text-muted-foreground mb-1">
-                  <span>{bracket.completedPicks}/63 picks</span>
-                  <span>{Math.round((bracket.completedPicks / 63) * 100)}%</span>
+                  <span>{bracket.completedPicks}/{bracket.totalPicks} picks</span>
+                  <span>{Math.round((bracket.completedPicks / bracket.totalPicks) * 100)}%</span>
                 </div>
-                <Progress value={(bracket.completedPicks / 63) * 100} className="h-1.5" />
+                <Progress value={(bracket.completedPicks / bracket.totalPicks) * 100} className="h-1.5" />
               </div>
 
               {!isLocked && !bracket.submitted && isComplete && (
