@@ -28,7 +28,6 @@ export function Navbar() {
 
   const navLinks = [
     { label: "Home", href: "/", protected: false },
-    { label: "Leaderboard", href: "/leaderboard", protected: false },
     { label: "Dashboard", href: "/dashboard", protected: true },
     { label: "Groups", href: "/groups", protected: true },
   ];
