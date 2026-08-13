@@ -62,7 +62,7 @@ export default function Home() {
               </p>
 
               <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
-                <Link href="/login">
+                <Link href="/dashboard">
                   <Button size="lg" className="h-11 px-7 font-heading font-bold text-base tracking-wide uppercase bg-primary hover:bg-primary/90 text-white rounded">
                     {isLocked ? "View Bracket" : "Make Your Picks"}
                   </Button>
@@ -234,7 +234,7 @@ export default function Home() {
           <p className="text-white/60 mb-7 text-sm font-sans">
             Free to play. Just pick your winners and see how you stack up.
           </p>
-          <Link href="/login">
+          <Link href="/dashboard">
             <Button size="lg" className="h-11 px-10 rounded font-heading font-bold text-base uppercase tracking-wide bg-primary hover:bg-primary/90 text-white">
               Get Started
             </Button>

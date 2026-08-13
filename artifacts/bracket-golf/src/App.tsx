@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,12 +7,10 @@ import NotFound from '@/pages/not-found';
 import {
   Route,
   Switch,
-  useLocation,
   Router as WouterRouter,
 } from 'wouter';
 
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useGetMe } from '@workspace/api-client-react';
 
 import Home from '@/pages/Home';
 import Login from '@/pages/Login';
@@ -26,61 +24,21 @@ import Admin from '@/pages/Admin';
 
 const queryClient = new QueryClient();
 
-// Auth Guard Component
-function ProtectedRoute({ component: Component, ...rest }: { component: any, path: string }) {
-  const [location, setLocation] = useLocation();
-  const { data: user, isLoading, isFetching, isError } = useGetMe({
-    query: {
-      retry: false,
-    }
-  });
-
-  useEffect(() => {
-    // Don't redirect while a refetch is in-flight (e.g. right after login).
-    if (!isLoading && !isFetching && (isError || !user)) {
-      setLocation('/login');
-    }
-  }, [user, isLoading, isFetching, isError, setLocation]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!user) return null;
-
-  return <Component {...rest} />;
-}
-
 function Router() {
   return (
     <AppLayout>
       <RoutedErrorBoundary>
         <Switch>
           <Route path="/" component={Home} />
+          {/* /login kept in routes so existing sessions/bookmarks still work */}
           <Route path="/login" component={Login} />
           <Route path="/leaderboard" component={Leaderboard} />
           <Route path="/tournament" component={TournamentResults} />
-          
-          <Route path="/dashboard">
-            {() => <ProtectedRoute component={Dashboard} path="/dashboard" />}
-          </Route>
-          <Route path="/brackets/:id">
-            {({ id }) => <ProtectedRoute component={BracketViewer} path={`/brackets/${id}`} />}
-          </Route>
-          <Route path="/groups">
-            {() => <ProtectedRoute component={Groups} path="/groups" />}
-          </Route>
-          <Route path="/groups/:id">
-            {({ id }) => <ProtectedRoute component={GroupDetail} path={`/groups/${id}`} />}
-          </Route>
-          <Route path="/admin">
-            {() => <ProtectedRoute component={Admin} path="/admin" />}
-          </Route>
-          
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/brackets/:id" component={BracketViewer} />
+          <Route path="/groups" component={Groups} />
+          <Route path="/groups/:id" component={GroupDetail} />
+          <Route path="/admin" component={Admin} />
           <Route component={NotFound} />
         </Switch>
       </RoutedErrorBoundary>
