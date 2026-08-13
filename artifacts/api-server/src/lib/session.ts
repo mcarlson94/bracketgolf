@@ -13,9 +13,14 @@ export function getSessionUserId(req: Request): string | null {
 }
 
 export function setSessionUserId(res: Response, userId: string): void {
+  const isProduction = process.env.NODE_ENV === "production";
   res.cookie(SESSION_COOKIE, userId, {
     httpOnly: true,
-    sameSite: "lax",
+    // In production (HTTPS) use SameSite=None so the cookie is sent whether
+    // the API and frontend are on the same origin or separate Railway services.
+    // In development keep Lax (works fine over the Replit proxy same-origin).
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction,
     maxAge: 60 * 60 * 24 * 30 * 1000, // 30 days
     path: "/",
   });
