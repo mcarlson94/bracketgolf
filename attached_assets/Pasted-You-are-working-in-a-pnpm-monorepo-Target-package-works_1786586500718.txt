@@ -1,0 +1,36 @@
+You are working in a pnpm monorepo. Target package: @workspace/bracket-golf
+at artifacts/bracket-golf/.
+
+Problem: this package is a Vite SPA with no production server. Railway's start
+command is `node artifacts/bracket-golf/server.js` and that file does not exist,
+so the container crash-loops. It also has no server-side meta tag injection, which
+means every route would ship an identical empty HTML shell to Google and to social
+scrapers.
+
+Create artifacts/bracket-golf/server.js with these requirements:
+
+1. ESM syntax only. This package has "type": "module".
+2. Use express. Add "express" to DEPENDENCIES (not devDependencies) in
+   artifacts/bracket-golf/package.json.
+3. Read the port as: const PORT = process.env.PORT || 5000
+   Bind to 0.0.0.0, not localhost. Railway requires this.
+4. Serve static files from the Vite build output. vite.config.ts sets
+   build.outDir to path.resolve(import.meta.dirname, 'dist/public'), so resolve
+   the same path in server.js and pass it to express.static.
+5. On startup, verify index.html exists in that directory. If missing, log a clear
+   error and process.exit(1) so the failure is loud instead of silent.
+6. Define a META object mapping every route path to { title, description, canonical,
+   ogTitle, ogDescription, ogImage }. Enumerate every route by reading the wouter
+   router in src/. Write real copy for each, not placeholders.
+7. Add a catch-all GET handler registered AFTER express.static. It must read
+   index.html, string-replace the <title>, and inject <meta name="description">,
+   <link rel="canonical">, and the og: tags for the matched route, then send the
+   modified HTML. Unknown routes fall back to a default META entry.
+8. Add explicit routes for /robots.txt and /sitemap.xml. Generate the sitemap XML
+   from the same META object so the two cannot drift apart.
+
+Also add to artifacts/bracket-golf/package.json:
+  "scripts": { "start": "node server.js" }
+  "engines": { "node": ">=22" }
+
+Do not modify vite.config.ts. Do not change the build script.
