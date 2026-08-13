@@ -3,6 +3,7 @@
  * Serves the Vite SPA build with per-route meta tag injection for SEO and social sharing.
  */
 import express from 'express';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import { readFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -173,6 +174,29 @@ function buildSitemap() {
 
 // --- App ---------------------------------------------------------------------
 const app = express();
+
+// API proxy — forward /api/* to the API service
+// Set API_URL in Railway to the full base URL of the API service (e.g. https://api.example.up.railway.app)
+const API_URL = process.env.API_URL;
+if (API_URL) {
+  app.use(
+    '/api',
+    createProxyMiddleware({
+      target: API_URL,
+      changeOrigin: true,
+      on: {
+        error: (err, _req, res) => {
+          console.error('[proxy] API proxy error:', err.message);
+          res.statusCode = 502;
+          res.end(JSON.stringify({ error: 'API proxy error', detail: err.message }));
+        },
+      },
+    })
+  );
+  console.log(`[server] /api/* → ${API_URL}`);
+} else {
+  console.warn('[server] WARNING: API_URL not set — /api/* requests will not be proxied.');
+}
 
 app.get('/robots.txt', (_req, res) => {
   res.type('text/plain').send(

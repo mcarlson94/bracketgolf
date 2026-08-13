@@ -14,7 +14,8 @@
     "node": ">=22"
   },
   "dependencies": {
-    "express": "^4.22.2"
+    "express": "^4.22.2",
+    "http-proxy-middleware": "^4.2.0"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
