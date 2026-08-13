@@ -1,0 +1,40 @@
+Railway deployment failed — Build Error
+
+Update pnpm-lock.yaml so its overrides section matches pnpm-workspace.yaml, then commit the regenerated lockfile. The build fails during "pnpm install --frozen-lockfile" with ERR_PNPM_LOCKFILE_CONFIG_MISMATCH because the workspace config's overrides no longer match what's recorded in the lockfile, and this same failure has persisted across the last three deployments.
+
+Repository: https://github.com/mcarlson94/bracketgolf
+Branch: main · Commit: 8469b05 — Refactor bracket viewer component logic
+
+Replit-Commit-Author: Agent
+Deployment ID: 89e73cf8-fd98-4015-9452-8444151ee34f
+Service ID: 9593fea0-fb2f-46b6-b184-ec9e4c49cc87
+Environment ID: 335adaa5-101f-4c25-9c75-20d129057f2c
+
+---
+
+## Problem
+The build fails at the BUILD_IMAGE stage during dependency installation. Build logs show:
+```
+ERR_PNPM_LOCKFILE_CONFIG_MISMATCH  Cannot proceed with the frozen installation. The current "overrides" configuration doesn't match the value found in the lockfile
+
+Update your lockfile using "pnpm install --no-frozen-lockfile"
+```
+followed by:
+```
+Build Failed: build daemon returned an error < failed to solve: process "pnpm install --frozen-lockfile --prefer-offline" did not complete successfully: exit code: 1 >
+```
+This is a Railpack/Nixpacks build using pnpm with `pnpm install --frozen-lockfile --prefer-offline`. The same error occurred in the two prior deployments (0858754b-3adc-423c-9aec-89bdbd0da757 and f1366333-6af0-45ee-a31d-3eb4f573e44d), confirming this is a pre-existing lockfile drift issue, not caused by the current commit's app-level refactor of BracketViewer.tsx.
+
+## Diagnosis
+pnpm's `--frozen-lockfile` flag strictly validates that pnpm-lock.yaml's recorded config metadata (including the `overrides` section) exactly matches the current pnpm-workspace.yaml. The workspace config (pnpm-workspace.yaml) defines an extensive `overrides` block (esbuild platform excludes, lightningcss, rollup, tailwindcss/oxide, ngrok-bin, and the `@esbuild-kit/esm-loader` -> tsx override, plus `esbuild: 0.27.3`). The lockfile (pnpm-lock.yaml) was inspected and does contain a similar overrides list, but pnpm still rejects it as mismatched under frozen-lockfile mode, indicating the lockfile's committed state does not exactly reflect what pnpm would generate from the current workspace config (whitespace/quoting/ordering or a config value drift is enough to trigger this in pnpm). Because this has been failing for at least 3 consecutive deployments/commits, the lockfile has been out of sync with pnpm-workspace.yaml since before this commit range and was never regenerated after a workspace config edit.
+
+## Fix
+1. Locally (or in CI), run:
+```
+pnpm install --no-frozen-lockfile
+```
+from the repo root. This regenerates `pnpm-lock.yaml` so its overrides/catalog metadata exactly matches the current `pnpm-workspace.yaml`.
+2. Commit the updated `pnpm-lock.yaml` (sha previously observed: 576a39288760c35995b15a60aab6baa446994850) to the `main` branch.
+3. This allows the Railway build's `pnpm install --frozen-lockfile --prefer-offline` step to succeed since the lockfile will now match the workspace config exactly.
+
+This fix requires running the pnpm CLI to correctly recompute the lockfile contents (dependency resolution, hashes, and config fingerprint) — it cannot be done as a manual text edit, so it is not purely auto-fixable via file API edits alone.
