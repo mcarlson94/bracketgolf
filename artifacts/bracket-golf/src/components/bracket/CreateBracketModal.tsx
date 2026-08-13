@@ -101,10 +101,14 @@ export function CreateBracketModal({
           }
         );
       });
-    } catch {
+    } catch (err: any) {
+      const isHtmlResponse =
+        err?.message?.includes("parse") || err?.name === "ResponseParseError";
       toast({
-        title: "Something went wrong",
-        description: "Couldn't create your bracket. Please try again.",
+        title: "Couldn't reach the server",
+        description: isHtmlResponse
+          ? "The API isn't connected. If you're the site owner, set API_URL in Railway."
+          : err?.message || "Couldn't create your bracket. Please try again.",
         variant: "destructive",
       });
       setBusy(false);
