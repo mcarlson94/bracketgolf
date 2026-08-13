@@ -39,7 +39,9 @@ export default function Login() {
       { data: { name: name.trim() } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+          // Reset (not just invalidate) so ProtectedRoute sees isLoading:true
+          // while /api/auth/me refetches, preventing an immediate bounce back to /login.
+          queryClient.resetQueries({ queryKey: ["/api/auth/me"] });
           setLocation("/dashboard");
         },
         onError: () => {

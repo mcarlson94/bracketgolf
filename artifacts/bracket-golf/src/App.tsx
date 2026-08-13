@@ -29,17 +29,18 @@ const queryClient = new QueryClient();
 // Auth Guard Component
 function ProtectedRoute({ component: Component, ...rest }: { component: any, path: string }) {
   const [location, setLocation] = useLocation();
-  const { data: user, isLoading, isError } = useGetMe({
+  const { data: user, isLoading, isFetching, isError } = useGetMe({
     query: {
       retry: false,
     }
   });
 
   useEffect(() => {
-    if (!isLoading && (isError || !user)) {
+    // Don't redirect while a refetch is in-flight (e.g. right after login).
+    if (!isLoading && !isFetching && (isError || !user)) {
       setLocation('/login');
     }
-  }, [user, isLoading, isError, setLocation]);
+  }, [user, isLoading, isFetching, isError, setLocation]);
 
   if (isLoading) {
     return (
